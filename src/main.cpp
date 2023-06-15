@@ -16,6 +16,8 @@ int	main(int argc, char **argv) {
 	Server	server(stoi(port), password);
 
 	server.createSocket();
+	server.bindSocket();
+
 	std::cout << server.getSocketFd() << std::endl;
 
 	return (0);
