@@ -1,8 +1,7 @@
-#include <iostream>
-#include <string>
-#include <regex>
+#include "../include/irc.hpp"
 
 int	main(int argc, char **argv) {
+
 
 	if (argc != 3) {
 		std::cerr << "Error: invalid number of arguments !" << std::endl;
@@ -13,5 +12,11 @@ int	main(int argc, char **argv) {
 		port.find_first_not_of("0123456789") != std::string::npos) {
 		std::cerr << "Error: invalid arguments !" << std::endl;
 	}
+
+	Server	server(stoi(port), password);
+
+	server.createSocket();
+	std::cout << server.getSocketFd() << std::endl;
+
 	return (0);
 }
