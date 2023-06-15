@@ -11,14 +11,16 @@ int	main(int argc, char **argv) {
 	if (port.empty() || password.empty() || \
 		port.find_first_not_of("0123456789") != std::string::npos) {
 		std::cerr << "Error: invalid arguments !" << std::endl;
+		return (1);
 	}
 
 	Server	server(stoi(port), password);
 
 	server.createSocket();
 	server.bindSocket();
+	server.selectSockets();
 
-	std::cout << server.getSocketFd() << std::endl;
+	std::cout << server.getServerSocketFd() << std::endl;
 
 	return (0);
 }

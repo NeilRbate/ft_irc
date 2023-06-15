@@ -15,10 +15,13 @@ class	Server {
 		//Create a socket
 		void	createSocket( void );
 		void	bindSocket( void );
+		void	selectSockets( void );
+		void	newConnection( void );
+		void	readInput( int client_fd );
 
 
 		//###Getter###//
-		int	getSocketFd( void ) const;
+		int	getServerSocketFd( void ) const;
 
 		//###Exception###//
 		class	SocketException : public std::exception {
@@ -32,11 +35,10 @@ class	Server {
 		std::string	_password;
 
 		int	_port;
-		int	_socketFd;
+		fd_set _read_fd_set;
+		std::vector<int> _connections;
 
-		struct sockaddr_in _address;
-
-
+		struct sockaddr_in _server_addr;
 };
 
 #endif
