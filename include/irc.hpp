@@ -8,6 +8,4 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-#include "Server.hpp"
-
 #endif

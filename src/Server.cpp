@@ -1,4 +1,4 @@
-#include "../include/irc.hpp"
+#include "../include/Server.hpp"
 
 //###Constructor###//
 Server::Server( int port, std::string password ) {
