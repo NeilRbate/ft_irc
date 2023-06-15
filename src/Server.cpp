@@ -73,6 +73,8 @@ void	Server::newConnection( void ) {
 	int client_fd = accept(this->getServerSocketFd(), (struct sockaddr*)&client_addr, &addr_len);
 	if (client_fd >= 0) {
 		this->_connections.push_back(client_fd);
+		this->_users.insert(std::pair<int, User>(client_fd, User(client_fd)));
+
 		std::cout << "New connection with client fd: " << client_fd << std::endl;
 	} else {
 		std::cout << "Failed to connect new client" << std::endl;
@@ -92,6 +94,7 @@ void	Server::readInput( int client_fd ) {
 		close(client_fd);
 		std::vector<int>::iterator index = std::find(this->_connections.begin(), this->_connections.end(), client_fd);
 		this->_connections.erase(index);
+		this->_users.erase(client_fd);
 		return ;
 	}
 	while (output > 0) {
@@ -99,11 +102,27 @@ void	Server::readInput( int client_fd ) {
 		bzero(buffer, 256);
 		output = recv(client_fd, buffer, 255, 0);
 	}
-	std::cout << "Received message from client fd " << client_fd << std::endl;
-	std::cout << msg << std::endl;
+	if (msg[0] == '/') {
+		std::cout << "Command: " << msg << std::endl;
+	} else {
+		User user = this->_users.at(client_fd);
+		if (user.getChannel() == "") {
+			std::cout << "User not in channel" << std::endl;
+			return ;
+		}
+		Channel &channel = this->_channels.at(user.getChannel());
+		channel.sendMsgFromUser(msg, user);
+	}
 }
 
 int	Server::getServerSocketFd( void ) const {
-
 	return (this->_connections[0]);
+}
+
+std::map<int, User> Server::getUsers( void ) const {
+	return (this->_users);
+}
+
+std::map<std::string, Channel> Server::getChannels( void ) const {
+	return (this->_channels);
 }

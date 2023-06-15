@@ -1,6 +1,8 @@
 CXX = c++
 SRCS = src/main.cpp \
-	   src/Server.cpp
+	   src/Server.cpp \
+	   src/User.cpp \
+	   src/Channel.cpp
 OBJS = ${SRCS:.cpp=.o}
 NAME = ircserv
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
