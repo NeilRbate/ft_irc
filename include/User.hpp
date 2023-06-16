@@ -1,10 +1,12 @@
 #ifndef __USER_HPP
 # define __USER_HPP
 #include "irc.hpp"
+#include "Server.hpp"
+class	Server;
 
 class   User {
     public:
-        User(int fd);
+        User(int fd, Server *server);
         ~User();
 
         int getFd() const;
@@ -28,6 +30,7 @@ class   User {
         std::string nickName;
         std::string userName;
         std::string realName;
+		Server	*server;
 };
 
 #endif

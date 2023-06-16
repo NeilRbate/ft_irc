@@ -17,13 +17,14 @@ int	main(int argc, char **argv) {
 
 	Server	server(stoi(port), password);
 
-	server.getChannels().insert(std::pair<std::string, Channel>("#general", Channel("#general")));
 
 	server.createSocket();
 	server.bindSocket();
-	server.selectSockets();
+	std::cout << "Server socket fd -> " <<server.getServerSocketFd() << std::endl;
 
-	std::cout << server.getServerSocketFd() << std::endl;
+	Channel	general("#general", &server);
+	server.setChannel("#general", &general);
+	server.selectSockets();
 
 	return (0);
 }

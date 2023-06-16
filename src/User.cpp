@@ -2,7 +2,7 @@
 #include "../include/Channel.hpp"
 #include "../include/Server.hpp"
 
-User::User(int fd) : fd(fd), isAuth(false), channel("#general") { }
+User::User(int fd, Server *server) : fd(fd), isAuth(false), channel("#general"), server(server) { }
 User::~User() { }
 
 int User::getFd() const { return this->fd; }
@@ -20,17 +20,17 @@ void User::sendMsg(std::string msg) const {
 }
 
 void User::changeChannel(std::string channel) {
-    if (!Server::channels.count(this->channel)) {
-        sendMsg(":" + Server::serverName + " 403 " + this->nickName + " " + this->channel + " :No such channel\r\n");
+    if (server->getChannels().count(this->channel)) {
+        sendMsg(":" + server->getName() + " 403 " + this->nickName + " " + this->channel + " :No such channel\r\n");
         return;
     }
 
     this->channel = channel;
 
-    Channel &chan = Server::channels.at(channel);
+    Channel &chan = server->getChannels().at(channel);
 
-    if (chan.getIsInviteOnly() && std::find(chan.getAuthorizedUsers().begin(), chan.getAuthorizedUsers().end(), this->nickName) == chan.getAuthorizedUsers().end()) {
-        sendMsg(":" + Server::serverName + " 473 " + this->nickName + " " + this->channel + " :Cannot join channel (+i)\r\n");
+   if (chan.getIsInviteOnly() && std::find(chan.getAuthorizedUsers().begin(), chan.getAuthorizedUsers().end(), this->nickName) == chan.getAuthorizedUsers().end()) {
+        sendMsg(":" + server->getName() + " 473 " + this->nickName + " " + this->channel + " :Cannot join channel (+i)\r\n");
         return;
     }
 

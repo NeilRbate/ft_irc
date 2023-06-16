@@ -1,7 +1,7 @@
 #include "../include/Server.hpp"
 
 //###Constructor###//
-Server::Server( int port, std::string password ) {
+Server::Server( int port, std::string password ) : _name("Barba-chat") {
 	
 	this->_port = port;
 	this->_password = password;
@@ -73,8 +73,7 @@ void	Server::newConnection( void ) {
 	int client_fd = accept(this->getServerSocketFd(), (struct sockaddr*)&client_addr, &addr_len);
 	if (client_fd >= 0) {
 		this->_connections.push_back(client_fd);
-		this->_users.insert(std::pair<int, User>(client_fd, User(client_fd)));
-
+		this->_users.insert(std::pair<int, User>(client_fd, User(client_fd, this)));
 		std::cout << "New connection with client fd: " << client_fd << std::endl;
 	} else {
 		std::cout << "Failed to connect new client" << std::endl;
@@ -115,6 +114,10 @@ void	Server::readInput( int client_fd ) {
 	}
 }
 
+std::string	Server::getName( void ) const {
+	return (this->_name);
+}
+
 int	Server::getServerSocketFd( void ) const {
 	return (this->_connections[0]);
 }
@@ -125,4 +128,9 @@ std::map<int, User> Server::getUsers( void ) const {
 
 std::map<std::string, Channel> Server::getChannels( void ) const {
 	return (this->_channels);
+}
+
+void	Server::setChannel(std::string const & name, Channel *channel) {
+	
+	this->_channels.insert(std::pair<std::string, Channel>(name, channel));
 }

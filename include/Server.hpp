@@ -4,6 +4,7 @@
 #include "Channel.hpp"
 
 class	User;
+class	Channel;
 
 class	Server {
 
@@ -24,10 +25,14 @@ class	Server {
 
 
 		//###Getter###//
+		//
+		std::string	getName( void ) const;
 		int	getServerSocketFd( void ) const;
 		std::map<int, User> getUsers( void ) const;
 		std::map<std::string, Channel> getChannels( void ) const;
 
+		//###Setter###//
+		void	setChannel(std::string const & name, Channel *channel);
 
 		//###Exception###//
 		class	SocketException : public std::exception {
@@ -38,14 +43,16 @@ class	Server {
 
 	private:
 
-		std::string	_password;
-		int	_port;
-		fd_set _read_fd_set;
-		std::vector<int> _connections;
-		std::map<int, User> _users;
-		std::map<std::string, Channel> _channels;
+		std::string						_password;
+		int								_port;
+		fd_set 							_read_fd_set;
+		std::vector<int>				_connections;
+		std::map<int, User>				_users;
+		std::map<std::string, Channel>	_channels;
 
-		struct sockaddr_in _server_addr;
+		struct sockaddr_in 				_server_addr;
+
+		std::string const				_name;
 
 };
 
