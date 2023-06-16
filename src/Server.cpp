@@ -111,6 +111,29 @@ void	Server::readInput( User & user ) {
 void	Server::executeCommand( User & user, std::string & cmd ) {
 	std::cout << "Command from user " << user.getFd() << std::endl;
 	std::cout << cmd << std::endl;
+
+	if (cmd.find("NICK") != std::string::npos) {
+		size_t	found = cmd.find("NICK");
+		user.nickName = cmd.substr(found, cmd.size());
+	}
+	if (cmd.find("USER") != std::string::npos) {
+		size_t	found = cmd.find("USER");
+		user.userName = cmd.substr(found, cmd.size());
+	}
+	if (cmd.find("PASS") != std::string::npos) {
+		size_t	found = cmd.find("PASS");
+		if (cmd.substr(5, cmd.size()) == Server::password)
+			user.setIsAuth(true);
+		std::cout << "########## pass-> " <<  cmd.substr(found + 1, cmd.size()) << "###" << std::endl;
+}
+
+	if (user.getIsAuth() == false) {
+		std::cout << "NOT AUTH" << std::endl;
+		user.sendMsg("Barba-chat :Please, auth you with PASS !");
+	}
+	else
+		std::cout << user.getNickName() << " is Auth !" << std::endl;
+
 }
 
 int		Server::getServerSocketFd( void ) {

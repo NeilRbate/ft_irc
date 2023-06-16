@@ -20,7 +20,6 @@ class User {
 
         std::string input;
 
-    private:
         int fd;
         bool isAuth;
         bool isOperator;
