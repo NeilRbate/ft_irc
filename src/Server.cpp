@@ -42,12 +42,17 @@ void	Server::selectSocket( void ) {
 			std::cerr << "Select error" << std::endl;
 			return ;
 		}
-		if (FD_ISSET(Server::getServerSocketFd(), &Server::read_fd_set))
+		if (FD_ISSET(Server::getServerSocketFd(), &Server::read_fd_set)) {
 			newConnection();
-		else {
-			for (size_t i = 0; i < Server::fds.size(); i++) {
-				if (FD_ISSET(Server::fds[i], &Server::read_fd_set))
-					readInput(Server::fds[i]);
+			continue ;
+		}
+		
+		for (size_t i = 0; i < Server::fds.size(); i++) {
+			if (!FD_ISSET(Server::fds[i], &Server::read_fd_set)) 
+				continue ;
+			
+			for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
+				if (it->getFd() == Server::fds[i]) readInput(*it);
 			}
 		}
 	}
@@ -59,7 +64,6 @@ void	Server::newConnection( void ) {
 
 	bzero((char*) &client_addr, addr_len);
 	int client_fd = accept(Server::getServerSocketFd(), (struct sockaddr*)&client_addr, &addr_len);
-	std::cout << "coucou from " << client_fd << std::endl;
 	if (client_fd >= 0) {
 		Server::fds.push_back(client_fd);
 		Server::users.push_back(User(client_fd));
@@ -67,7 +71,7 @@ void	Server::newConnection( void ) {
 
         for (size_t i = 0; i < Server::users.size(); i++) {
             if (Server::users[i].getFd() == client_fd) {
-                Server::users[i].sendMsg(":" + Server::name + " 001 " + Server::users[i].getNickName() + " :" + "Welcome on BarbaChat !\r\n");
+                Server::users[i].sendMsg(":" + Server::name + " 001 jbarbate :" + "Welcome on BarbaChat !\r\n");
             }
         }
 	} else {
@@ -75,35 +79,41 @@ void	Server::newConnection( void ) {
 	}
 }
 
-void	Server::readInput( int client_fd ) {
+void	Server::readInput( User & user ) {
 	int output = 0;
-	char buffer[256];
-	std::string msg;
+	char buffer[512];
 
-	fcntl(client_fd, F_SETFL, O_NONBLOCK);
-	bzero(buffer, 256);
-	output = recv(client_fd, buffer, 255, 0);
+	fcntl(user.getFd(), F_SETFL, O_NONBLOCK);
+	bzero(buffer, 512);
+	output = recv(user.getFd(), buffer, 512, 0);
 	if (output <= 0) {
-		std::cout << "Connection closed with client fd:" << client_fd << std::endl;
-		close(client_fd);
-		std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), client_fd);
+		std::cout << "Connection closed with client fd:" << user.getFd() << std::endl;
+		close(user.getFd());
+		std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), user.getFd());
 		Server::fds.erase(index);
 		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
-            if (it->getFd() == client_fd) {
+            if (it->getFd() == user.getFd()) {
                 it->sendMsg(":" + Server::name + " 001 " + it->getNickName() + " :" + "Goodbye !\r\n");
                 Server::users.erase(it);
             }
         }
 		return ;
 	}
-	while (output > 0) {
-		msg += buffer;
-		bzero(buffer, 256);
-		output = recv(client_fd, buffer, 255, 0);
+	user.input += buffer;
+
+	while (user.input.find("\r\n") != std::string::npos) {
+		std::string cmd = user.input.substr(0, user.input.find("\r\n"));
+		user.input = user.input.substr(user.input.find("\r\n") + 2);
+		executeCommand(user, cmd);
 	}
 }
 
-int	Server::getServerSocketFd( void ) {
+void	Server::executeCommand( User & user, std::string & cmd ) {
+	std::cout << "Command from user " << user.getFd() << std::endl;
+	std::cout << cmd << std::endl;
+}
+
+int		Server::getServerSocketFd( void ) {
 	return (Server::fds[0]);
 }
 

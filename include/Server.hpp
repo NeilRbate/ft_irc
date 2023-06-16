@@ -10,8 +10,8 @@ public:
     static void bindSocket();
     static void selectSocket();
     static void newConnection();
-    static void readInput(int clientFd);
-
+    static void readInput(User & user);
+    static void executeCommand(User & user, std::string & cmd);
     static void addChannel(std::string const & name);
 
     static int getServerSocketFd();

@@ -1,4 +1,4 @@
 ircserv
 *.o
-.vscode/settings.json
+.vscode/
 .DS_Store

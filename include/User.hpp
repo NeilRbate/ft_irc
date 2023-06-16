@@ -18,6 +18,8 @@ class User {
  
         void sendMsg(std::string msg) const;
 
+        std::string input;
+
     private:
         int fd;
         bool isAuth;
