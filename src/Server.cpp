@@ -132,5 +132,5 @@ std::map<std::string, Channel> Server::getChannels( void ) const {
 
 void	Server::setChannel(std::string const & name, Channel *channel) {
 	
-	this->_channels.insert(std::pair<std::string, Channel>(name, channel));
+	this->_channels.insert(std::pair<std::string, Channel>(name, *channel));
 }

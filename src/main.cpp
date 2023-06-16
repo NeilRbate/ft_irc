@@ -23,7 +23,7 @@ int	main(int argc, char **argv) {
 	std::cout << "Server socket fd -> " <<server.getServerSocketFd() << std::endl;
 
 	Channel	general("#general", &server);
-	server.setChannel("#general", &general);
+	server.setChannel(general.getName(), &general);
 	server.selectSockets();
 
 	return (0);
