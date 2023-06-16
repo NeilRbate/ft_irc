@@ -1,23 +1,8 @@
-#include "../include/Server.hpp"
-
-//###Constructor###//
-Server::Server( int port, std::string password ) : _name("Barba-chat") {
-	
-	this->_port = port;
-	this->_password = password;
-
-	return ;
-}
-
-//###Destructor###//
-Server::~Server() {
-
-	return ;
-}
+#include "Server.hpp"
 
 void	Server::createSocket( void ) {
 	try {
-		this->_connections.push_back(socket(AF_INET, SOCK_STREAM, 0));
+		Server::fds.push_back(socket(AF_INET, SOCK_STREAM, 0));
 	}
 	catch (std::exception & e) {
 		std::cout << "Error: " << e.what() << std::endl;
@@ -26,40 +11,43 @@ void	Server::createSocket( void ) {
 }
 
 void	Server::bindSocket( void ) {
-	bzero((char*) &this->_server_addr, sizeof(this->_server_addr));
-	this->_server_addr.sin_family = AF_INET;
-	this->_server_addr.sin_addr.s_addr = INADDR_ANY;
-	this->_server_addr.sin_port = htons(this->_port);
+	bzero((char*) &Server::addr, sizeof(Server::addr));
+	Server::addr.sin_family = AF_INET;
+	Server::addr.sin_addr.s_addr = INADDR_ANY;
+	Server::addr.sin_port = htons(Server::port);
 
 	try {
-		bind(this->getServerSocketFd(), (struct sockaddr *)&this->_server_addr, sizeof(this->_server_addr));
+		bind(Server::getServerSocketFd(), (struct sockaddr *)&Server::addr, sizeof(Server::addr));
 	}
 	catch (std::exception & e) {
 		std::cout << "Error bind : " << e.what() << std::endl;
 		return ;
 	}
-	if (listen(this->getServerSocketFd(), FD_SETSIZE) < 0)
+	if (listen(Server::getServerSocketFd(), FD_SETSIZE) < 0)
 		std::cerr << "Listen error" << std::endl;
 }
 
-void	Server::selectSockets( void ) {
+void	Server::selectSocket( void ) {
 	int select_output;
 	
 	while (true) {
-		FD_ZERO(&this->_read_fd_set);
-		for (size_t i = 0; i < this->_connections.size(); i++) {
-			FD_SET(this->_connections[i], &this->_read_fd_set);
+		FD_ZERO(&Server::read_fd_set);
+		for (size_t i = 0; i < Server::fds.size(); i++) {
+			FD_SET(Server::fds[i], &Server::read_fd_set);
 		}
 
-		select_output = select(FD_SETSIZE, &this->_read_fd_set, NULL, NULL, NULL);
+		select_output = select(FD_SETSIZE, &Server::read_fd_set, NULL, NULL, NULL);
 
-		if (select_output < 0) return ;
-		if (FD_ISSET(this->getServerSocketFd(), &this->_read_fd_set))
+		if (select_output < 0) {
+			std::cerr << "Select error" << std::endl;
+			return ;
+		}
+		if (FD_ISSET(Server::getServerSocketFd(), &Server::read_fd_set))
 			newConnection();
 		else {
-			for (size_t i = 0; i < this->_connections.size(); i++) {
-				if (FD_ISSET(this->_connections[i], &this->_read_fd_set))
-					readInput(this->_connections[i]);
+			for (size_t i = 0; i < Server::fds.size(); i++) {
+				if (FD_ISSET(Server::fds[i], &Server::read_fd_set))
+					readInput(Server::fds[i]);
 			}
 		}
 	}
@@ -70,11 +58,18 @@ void	Server::newConnection( void ) {
 	socklen_t addr_len = sizeof(client_addr);
 
 	bzero((char*) &client_addr, addr_len);
-	int client_fd = accept(this->getServerSocketFd(), (struct sockaddr*)&client_addr, &addr_len);
+	int client_fd = accept(Server::getServerSocketFd(), (struct sockaddr*)&client_addr, &addr_len);
+	std::cout << "coucou from " << client_fd << std::endl;
 	if (client_fd >= 0) {
-		this->_connections.push_back(client_fd);
-		this->_users.insert(std::pair<int, User>(client_fd, User(client_fd, this)));
+		Server::fds.push_back(client_fd);
+		Server::users.push_back(User(client_fd));
 		std::cout << "New connection with client fd: " << client_fd << std::endl;
+
+        for (size_t i = 0; i < Server::users.size(); i++) {
+            if (Server::users[i].getFd() == client_fd) {
+                Server::users[i].sendMsg(":" + Server::name + " 001 " + Server::users[i].getNickName() + " :" + "Welcome on BarbaChat !\r\n");
+            }
+        }
 	} else {
 		std::cout << "Failed to connect new client" << std::endl;
 	}
@@ -91,9 +86,14 @@ void	Server::readInput( int client_fd ) {
 	if (output <= 0) {
 		std::cout << "Connection closed with client fd:" << client_fd << std::endl;
 		close(client_fd);
-		std::vector<int>::iterator index = std::find(this->_connections.begin(), this->_connections.end(), client_fd);
-		this->_connections.erase(index);
-		this->_users.erase(client_fd);
+		std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), client_fd);
+		Server::fds.erase(index);
+		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
+            if (it->getFd() == client_fd) {
+                it->sendMsg(":" + Server::name + " 001 " + it->getNickName() + " :" + "Goodbye !\r\n");
+                Server::users.erase(it);
+            }
+        }
 		return ;
 	}
 	while (output > 0) {
@@ -101,36 +101,20 @@ void	Server::readInput( int client_fd ) {
 		bzero(buffer, 256);
 		output = recv(client_fd, buffer, 255, 0);
 	}
-	if (msg[0] == '/') {
-		std::cout << "Command: " << msg << std::endl;
-	} else {
-		User user = this->_users.at(client_fd);
-		if (user.getChannel() == "") {
-			std::cout << "User not in channel" << std::endl;
-			return ;
-		}
-		Channel &channel = this->_channels.at(user.getChannel());
-		channel.sendMsgFromUser(msg, user);
-	}
 }
 
-std::string	Server::getName( void ) const {
-	return (this->_name);
+int	Server::getServerSocketFd( void ) {
+	return (Server::fds[0]);
 }
 
-int	Server::getServerSocketFd( void ) const {
-	return (this->_connections[0]);
-}
+void	Server::addChannel(std::string const & name) {
+    
+    for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+        if (it->getName() == name) {
+            std::cout << "Channel already exist" << std::endl;
+            return ;
+        }
+    }
 
-std::map<int, User> Server::getUsers( void ) const {
-	return (this->_users);
-}
-
-std::map<std::string, Channel> Server::getChannels( void ) const {
-	return (this->_channels);
-}
-
-void	Server::setChannel(std::string const & name, Channel *channel) {
-	
-	this->_channels.insert(std::pair<std::string, Channel>(name, *channel));
+    Server::channels.push_back(Channel(name));
 }

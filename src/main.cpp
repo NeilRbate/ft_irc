@@ -1,7 +1,15 @@
-#include "../include/Server.hpp"
+#include "Server.hpp"
+
+int Server::port;
+std::string Server::password;
+std::string Server::name = "Barba-Chat";
+std::vector<int> Server::fds;
+std::vector<Channel> Server::channels;
+std::vector<User> Server::users;
+sockaddr_in Server::addr;
+fd_set Server::read_fd_set;
 
 int	main(int argc, char **argv) {
-
 
 	if (argc != 3) {
 		std::cerr << "Error: invalid number of arguments !" << std::endl;
@@ -15,16 +23,16 @@ int	main(int argc, char **argv) {
 		return (1);
 	}
 
-	Server	server(stoi(port), password);
+	Server::port = stoi(port);
+    Server::password = password;
 
 
-	server.createSocket();
-	server.bindSocket();
-	std::cout << "Server socket fd -> " <<server.getServerSocketFd() << std::endl;
+	Server::createSocket();
+	Server::bindSocket();
+	std::cout << "Server socket fd -> " <<Server::getServerSocketFd() << std::endl;
 
-	Channel	general("#general", &server);
-	server.setChannel(general.getName(), &general);
-	server.selectSockets();
+	Server::addChannel("#general");
+	Server::selectSocket();
 
 	return (0);
 }

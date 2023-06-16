@@ -1,5 +1,4 @@
-#ifndef __IRC_HPP
-# define __IRC_HPP
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -10,6 +9,3 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <vector>
-#include <map>
-
-#endif
