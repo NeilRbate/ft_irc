@@ -71,7 +71,7 @@ void	Server::newConnection( void ) {
 
         for (size_t i = 0; i < Server::users.size(); i++) {
             if (Server::users[i].getFd() == client_fd) {
-                Server::users[i].sendMsg(":" + Server::name + " 001 jbarbate :" + "Welcome on BarbaChat !\r\n");
+                Server::users[i].sendMsg(":" + Server::name + " 001 " + ": Welcome on BarbaChat !\r\n");
             }
         }
 	} else {
@@ -109,31 +109,25 @@ void	Server::readInput( User & user ) {
 }
 
 void	Server::executeCommand( User & user, std::string & cmd ) {
-	std::cout << "Command from user " << user.getFd() << std::endl;
-	std::cout << cmd << std::endl;
 
-	if (cmd.find("NICK") != std::string::npos) {
-		size_t	found = cmd.find("NICK");
-		user.nickName = cmd.substr(found, cmd.size());
-	}
-	if (cmd.find("USER") != std::string::npos) {
-		size_t	found = cmd.find("USER");
-		user.userName = cmd.substr(found, cmd.size());
-	}
-	if (cmd.find("PASS") != std::string::npos) {
-		size_t	found = cmd.find("PASS");
-		if (cmd.substr(5, cmd.size()) == Server::password)
+	std::cout << "cmd -> " << cmd << std::endl;
+
+	if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
+			user.sendMsg("PONG " + Server::name + "\r\n");
+	else if (cmd.find("NICK") == 0 && cmd.size() > 5)
+		user.nickName = cmd.substr(5, cmd.size());
+	else if (cmd.find("USER") == 0 && cmd.size() > 5)
+		user.userName = cmd.substr(5, cmd.size());
+	else if (cmd.find("PASS") == 0 && cmd.size() > 5) {
+		if (user.getIsAuth() == true)
+			user.sendMsg("Barba-chat :You're already auth !\r\n");
+		else if (cmd.substr(5, cmd.size()) == Server::password)
 			user.setIsAuth(true);
-		std::cout << "########## pass-> " <<  cmd.substr(found + 1, cmd.size()) << "###" << std::endl;
-}
-
-	if (user.getIsAuth() == false) {
-		std::cout << "NOT AUTH" << std::endl;
-		user.sendMsg("Barba-chat :Please, auth you with PASS !");
-	}
-	else
-		std::cout << user.getNickName() << " is Auth !" << std::endl;
-
+		else
+			user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :Password Incorrect\r\n");
+	} 
+	else if (user.getIsAuth() == false)
+		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify ! Use PASS <password>\r\n");
 }
 
 int		Server::getServerSocketFd( void ) {
