@@ -145,15 +145,22 @@ void	sendPrivMsg( User & user, std::string & cmd ) {
 	if (msg.at(0) == '#') {
 		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) 
 			if (it->getName() == chan) {
-				it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " : " + msg + "\r\n", user);
+				std::vector<std::string> chanUsers = it->getAuthorizedUsers();
+				if (std::find(chanUsers.begin(), chanUsers.end(), user.nickName) != chanUsers.end()) {
+					it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " : " + msg + "\r\n", user);
+					return ;
+				}
+				user.sendMsg(":" + Server::name + " 404 " + chan + ": Cannot send to CHANNEL\r\n");
 				return ;
 		}
+		user.sendMsg(":" + Server::name + " 403 " + chan + ": No such CHANNEL\r\n");
 	} else {
 		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
 			if (it->getNickName() == chan) {
 				it->sendMsg(":" + user.nickName + " PRIVMSG " + it->nickName + " : " + msg + "\r\n");
 				return ;
 		}
+		user.sendMsg(":" + Server::name + " 401 " + user.nickName + ": No such NICK\r\n");
 	}
 }
 
