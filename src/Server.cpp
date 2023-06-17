@@ -110,6 +110,53 @@ void	Server::readInput( User & user ) {
 	}
 }
 
+
+//###Cmd functions###//
+
+void	nick(User & user, std::string & cmd) {
+	std::string	temp = cmd.substr(5, cmd.size() - 5);
+	if (temp.find_first_of("#$:") != std::string::npos || isdigit(temp.at(0)) == true) {
+		user.sendMsg(":" + Server::name + " 432 " + user.nickName + " :Invalid nickname\r\n");
+		return ;
+	}
+	for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
+		if (it->getNickName() == temp) {
+			user.sendMsg(":" + Server::name + " 433 " + user.nickName + ": " + temp + "\r\n");
+			return ;
+		}
+	if (user.nickName.empty())
+		user.nickName = temp;
+	else {
+		user.sendMsg(":" + user.nickName + " NICK " + temp + "\r\n");
+		user.nickName = temp;
+	}
+}
+
+void	sendPrivMsg( User & user, std::string & cmd ) {
+
+	size_t	point = cmd.find(":");
+	size_t	space = cmd.find(" ");
+	if (point <= space)
+		return;
+	std::string	chan = cmd.substr(space + 1, ((point - 1) - (space + 1)));
+	std::string	msg = cmd.substr(point + 1, cmd.size() - (point + 1));
+	std::cout << "channel ->" << chan << "|"  <<std::endl;
+	std::cout << "message ->" << msg << "|"  <<std::endl;
+	if (msg.at(0) == '#') {
+		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) 
+			if (it->getName() == chan) {
+				it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " : " + msg + "\r\n", user);
+				return ;
+		}
+	} else {
+		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
+			if (it->getNickName() == chan) {
+				it->sendMsg(":" + user.nickName + " PRIVMSG " + it->nickName + " : " + msg + "\r\n");
+				return ;
+		}
+	}
+}
+
 void	Server::executeCommand( User & user, std::string & cmd ) {
 
 	std::cout << "cmd -> " << cmd << std::endl;
@@ -118,25 +165,8 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		return ;
 	else if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
 			user.sendMsg("PONG\r\n");
-	else if (cmd.find("NICK") == 0 && cmd.size() > 5 && cmd.at(4) == ' ') {
-		std::string	temp = cmd.substr(5, cmd.size() - 5);
-		if (temp.find_first_of("#$:") != std::string::npos || isdigit(temp.at(0)) == true) {
-			user.sendMsg(":" + Server::name + " 432 " + user.nickName + " :Invalid nickname\r\n");
-			return ;
-		}
-		for (std::vector<User>::iterator it = users.begin(); it != users.end(); it++) 
-			if (it->getNickName() == temp) {
-				user.sendMsg(":" + Server::name + " 433 " + user.nickName + " :Nickname is already in use\r\n");
-				return ;
-			}
-		if (user.nickName.empty())
-			user.nickName = temp;
-		else {
-			user.sendMsg(":" + user.nickName + " NICK " + temp + "\r\n");
-			user.nickName = temp;
-		}
-
-	}
+	else if (cmd.find("NICK") == 0 && cmd.size() > 5 && cmd.at(4) == ' ')
+		return nick(user, cmd);
 	else if (cmd.find("USER") == 0 && cmd.size() > 5 && user.userName.empty()) {
 		user.userName = cmd.substr(5, cmd.size());
 		std::ifstream file("asset/motd.txt");
@@ -144,7 +174,6 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		std::string line;
 		while (std::getline(file, line))
 			text += line + "\n";
-
 		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
 	}
 	else if (cmd.find("PASS") == 0 && cmd.size() > 5) {
@@ -159,19 +188,6 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
 	else if (cmd.find("PRIVMSG") == 0 && user.getIsAuth() == true)
 		sendPrivMsg(user, cmd);
-}
-
-void	Server::sendPrivMsg( User & user, std::string & cmd ) {
-
-	//search if its a channel msg or a private msg
-	(void)user;
-	size_t	end = cmd.find(":");
-	if ((end - 7) <= 0)
-		return ;
-	std::string	channel = cmd.substr(7, end - 7);
-	//Find if its a channel or nickname
-
-
 }
 
 int		Server::getServerSocketFd( void ) {

@@ -21,6 +21,6 @@ void Channel::sendMsgFromUser(std::string msg, User &user) const {
     for (it = users.begin(); it != users.end(); it++) {
         if ((*it)->getFd() == user.getFd())
             continue ;
-        (*it)->sendMsg("<"+ user.getNickName() + "> " + msg);
+        (*it)->sendMsg(msg);
     }
 }
