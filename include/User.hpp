@@ -26,4 +26,8 @@ class User {
         std::string nickName;
         std::string userName;
         std::string realName;
+
+        bool operator==(const User & other) const {
+            return (this->fd == other.fd);
+        }
 };

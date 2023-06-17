@@ -16,15 +16,14 @@ void	Server::bindSocket( void ) {
 	Server::addr.sin_addr.s_addr = INADDR_ANY;
 	Server::addr.sin_port = htons(Server::port);
 
-	try {
-		bind(Server::getServerSocketFd(), (struct sockaddr *)&Server::addr, sizeof(Server::addr));
+	if (bind(Server::getServerSocketFd(), (struct sockaddr *)&Server::addr, sizeof(Server::addr))) {
+		std::cout << "Error bind port: " << strerror(errno) << std::endl;
+		exit(1);
 	}
-	catch (std::exception & e) {
-		std::cout << "Error bind : " << e.what() << std::endl;
-		return ;
+	if (listen(Server::getServerSocketFd(), FD_SETSIZE)) {
+		std::cout << "Error bind port: " << strerror(errno) << std::endl;
+		exit(1);
 	}
-	if (listen(Server::getServerSocketFd(), FD_SETSIZE) < 0)
-		std::cerr << "Listen error" << std::endl;
 }
 
 void	Server::selectSocket( void ) {
@@ -52,7 +51,10 @@ void	Server::selectSocket( void ) {
 				continue ;
 			
 			for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
-				if (it->getFd() == Server::fds[i]) readInput(*it);
+				if (it->getFd() == Server::fds[i]) {
+					readInput(*it);
+					break ;
+				}
 			}
 		}
 	}
@@ -68,12 +70,6 @@ void	Server::newConnection( void ) {
 		Server::fds.push_back(client_fd);
 		Server::users.push_back(User(client_fd));
 		std::cout << "New connection with client fd: " << client_fd << std::endl;
-
-        for (size_t i = 0; i < Server::users.size(); i++) {
-            if (Server::users[i].getFd() == client_fd && Server::users[i].getIsAuth() == false) {
-                Server::users[i].sendMsg(":" + Server::name + " 001 " + ": Welcome on Barba-Chat !\r\n");
-            }
-        }
 	} else {
 		std::cout << "Failed to connect new client" << std::endl;
 	}
@@ -91,12 +87,8 @@ void	Server::readInput( User & user ) {
 		close(user.getFd());
 		std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), user.getFd());
 		Server::fds.erase(index);
-		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
-            if (it->getFd() == user.getFd()) {
-                it->sendMsg(":" + Server::name + " 001 " + it->getNickName() + " :" + "Goodbye !\r\n");
-                Server::users.erase(it);
-            }
-        }
+		std::vector<User>::iterator it = std::find(Server::users.begin(), Server::users.end(), user);
+		Server::users.erase(it);
 		return ;
 	}
 	user.input += buffer;
@@ -112,12 +104,23 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 
 	std::cout << "cmd -> " << cmd << std::endl;
 
-	if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
+	if (cmd.find("CAP") == 0)
+		return ;
+	else if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
 			user.sendMsg("PONG\r\n");
 	else if (cmd.find("NICK") == 0 && cmd.size() > 5)
 		user.nickName = cmd.substr(5, cmd.size());
-	else if (cmd.find("USER") == 0 && cmd.size() > 5)
+	else if (cmd.find("USER") == 0 && cmd.size() > 5 && user.userName.empty()) {
 		user.userName = cmd.substr(5, cmd.size());
+		std::ifstream file("asset/motd.txt");
+
+		std::string text;
+		std::string line;
+		while (std::getline(file, line))
+			text += line + "\n";
+
+		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
+	}
 	else if (cmd.find("PASS") == 0 && cmd.size() > 5) {
 		if (user.getIsAuth() == true)
 			user.sendMsg(Server::name +  " : You're already auth !\r\n");
