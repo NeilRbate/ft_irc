@@ -118,8 +118,25 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		return ;
 	else if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
 			user.sendMsg("PONG\r\n");
-	else if (cmd.find("NICK") == 0 && cmd.size() > 5)
-		user.nickName = cmd.substr(5, cmd.size() - 5);
+	else if (cmd.find("NICK") == 0 && cmd.size() > 5 && cmd.at(4) == ' ') {
+		std::string	temp = cmd.substr(5, cmd.size() - 5);
+		if (temp.find_first_of("#$:") != std::string::npos || isdigit(temp.at(0)) == true) {
+			user.sendMsg(":" + Server::name + " 432 " + user.nickName + " :Invalid nickname\r\n");
+			return ;
+		}
+		for (std::vector<User>::iterator it = users.begin(); it != users.end(); it++) 
+			if (it->getNickName() == temp) {
+				user.sendMsg(":" + Server::name + " 433 " + user.nickName + " :Nickname is already in use\r\n");
+				return ;
+			}
+		if (user.nickName.empty())
+			user.nickName = temp;
+		else {
+			user.sendMsg(":" + user.nickName + " NICK " + temp + "\r\n");
+			user.nickName = temp;
+		}
+
+	}
 	else if (cmd.find("USER") == 0 && cmd.size() > 5 && user.userName.empty()) {
 		user.userName = cmd.substr(5, cmd.size());
 		std::ifstream file("asset/motd.txt");
