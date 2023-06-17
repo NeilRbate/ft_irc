@@ -26,16 +26,26 @@ void	Server::bindSocket( void ) {
 	}
 }
 
+void signal_callback_handler(int) {
+	Server::exited = 1;
+	std::cout << std::endl << "=== Good Bye ! ===" << std::endl;
+}
+
 void	Server::selectSocket( void ) {
 	int select_output;
 	
-	while (true) {
+	signal(SIGINT, signal_callback_handler);
+
+	while (!Server::exited) {
 		FD_ZERO(&Server::read_fd_set);
 		for (size_t i = 0; i < Server::fds.size(); i++) {
 			FD_SET(Server::fds[i], &Server::read_fd_set);
 		}
 
 		select_output = select(FD_SETSIZE, &Server::read_fd_set, NULL, NULL, NULL);
+
+		if (Server::exited)
+			return ;
 
 		if (select_output < 0) {
 			std::cerr << "Select error" << std::endl;

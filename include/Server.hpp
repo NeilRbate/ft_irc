@@ -18,6 +18,7 @@ public:
     static int getServerSocketFd();
 
     static int port;
+    static int exited;
     static std::string password;
     static std::string name;
 

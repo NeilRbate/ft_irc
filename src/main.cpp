@@ -1,6 +1,7 @@
 #include "Server.hpp"
 
 int Server::port;
+int Server::exited = 0;
 std::string Server::password;
 std::string Server::name = "Barba-Chat";
 std::vector<int> Server::fds;
