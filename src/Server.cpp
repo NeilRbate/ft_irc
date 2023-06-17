@@ -119,11 +119,10 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 	else if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
 			user.sendMsg("PONG\r\n");
 	else if (cmd.find("NICK") == 0 && cmd.size() > 5)
-		user.nickName = cmd.substr(5, cmd.size());
+		user.nickName = cmd.substr(5, cmd.size() - 5);
 	else if (cmd.find("USER") == 0 && cmd.size() > 5 && user.userName.empty()) {
 		user.userName = cmd.substr(5, cmd.size());
 		std::ifstream file("asset/motd.txt");
-
 		std::string text;
 		std::string line;
 		while (std::getline(file, line))
