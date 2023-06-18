@@ -103,9 +103,11 @@ void	Server::readInput( User & user ) {
 	}
 	user.input += buffer;
 
-	while (user.input.find("\r\n") != std::string::npos) {
-		std::string cmd = user.input.substr(0, user.input.find("\r\n"));
-		user.input = user.input.substr(user.input.find("\r\n") + 2);
+	while (user.input.find("\n") != std::string::npos) {
+		std::string cmd = user.input.substr(0, user.input.find("\n"));
+		user.input = user.input.substr(user.input.find("\n") + 1);
+		if (cmd.at(cmd.size() - 1) == '\r')
+			cmd = cmd.substr(0, cmd.size() - 1);
 		executeCommand(user, cmd);
 	}
 }
@@ -142,13 +144,15 @@ void	sendPrivMsg( User & user, std::string & cmd ) {
 	std::string	msg = cmd.substr(point + 1, cmd.size() - (point + 1));
 	std::cout << "channel ->" << chan << "|"  <<std::endl;
 	std::cout << "message ->" << msg << "|"  <<std::endl;
-	if (msg.at(0) == '#') {
+	if (chan.at(0) == '#') {
 		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) 
 			if (it->getName() == chan) {
-				std::vector<std::string> chanUsers = it->getAuthorizedUsers();
-				if (std::find(chanUsers.begin(), chanUsers.end(), user.nickName) != chanUsers.end()) {
-					it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " : " + msg + "\r\n", user);
-					return ;
+				for (std::vector<User>::iterator it2 = Server::users.begin(); it2 != Server::users.end(); it2++) {
+					if (it2->getFd() == user.fd) {
+						it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " :" + msg + "\r\n", user);
+						std::cout << ":" + user.nickName + " PRIVMSG " + chan + " :" + msg + "\r\n";
+						return ;
+					}
 				}
 				user.sendMsg(":" + Server::name + " 404 " + chan + ": Cannot send to CHANNEL\r\n");
 				return ;
