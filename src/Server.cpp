@@ -205,7 +205,7 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 	}
 	else if (cmds.at(0) == "PASS") {
 		if (user.getIsAuth() == true)
-			user.sendMsg(Server::name +  " :You're already auth !\r\n");
+			user.sendMsg(":" + Server::name + " 462 " + user.getNickName() +  " :You may not reregister\r\n");
 		else if (cmds.at(1) == Server::password)
 			user.setIsAuth(true);
 		else
@@ -215,6 +215,9 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
 	else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmds, cmd);
+	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true && cmds.size() > 1)
+		user.joinChannel(cmds.at(1));
+		
 }
 
 int		Server::getServerSocketFd( void ) {
@@ -229,6 +232,5 @@ void	Server::addChannel(std::string const & name) {
             return ;
         }
     }
-
     Server::channels.push_back(Channel(name));
 }
