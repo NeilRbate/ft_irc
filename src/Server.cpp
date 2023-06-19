@@ -115,23 +115,30 @@ void	Server::readInput( User & user ) {
 
 //###Cmd functions###//
 
-void	nick(User & user, std::string & cmd) {
-	std::string	temp = cmd.substr(5, cmd.size() - 5);
-	if (temp.find_first_of("#$:") != std::string::npos || isdigit(temp.at(0)) == true) {
+void	nick(User & user, std::vector<std::string> & cmd) {
+	if (cmd.size() < 2) {
+		user.sendMsg(":" + Server::name + " 431 " + user.nickName + " :No nickname given\r\n");
+		return ;
+	}
+	if (cmd.at(1).find_first_of("#$:") != std::string::npos || isdigit(cmd[1][0]) == true) {
 		user.sendMsg(":" + Server::name + " 432 " + user.nickName + " :Invalid nickname\r\n");
 		return ;
 	}
-	for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
-		if (it->getNickName() == temp) {
-			user.sendMsg(":" + Server::name + " 433 " + user.nickName + ": " + temp + "\r\n");
+	for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) { 
+		if (it->getNickName() == cmd.at(1) && it->getFd() !=  user.getFd()) {
+			user.sendMsg(":" + Server::name + " 433 " + user.nickName + ":Nickname is already in use\r\n");
 			return ;
 		}
-	if (user.nickName.empty())
-		user.nickName = temp;
-	else {
-		user.sendMsg(":" + user.nickName + " NICK " + temp + "\r\n");
-		user.nickName = temp;
 	}
+	if (user.nickName.empty() == false) {
+		user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
+		user.nickName = cmd.at(1);
+	}
+	else {
+		user.nickName = cmd.at(1);
+		user.sendMsg(":" + user.nickName + " NICK " + user.nickName + "\r\n");
+	}
+	
 }
 
 void	sendPrivMsg( User & user, std::string & cmd ) {
@@ -171,15 +178,21 @@ void	sendPrivMsg( User & user, std::string & cmd ) {
 void	Server::executeCommand( User & user, std::string & cmd ) {
 
 	std::cout << "cmd -> " << cmd << std::endl;
-
-	if (cmd.find("CAP") == 0)
+	std::string	stock;
+	std::stringstream	scmd(cmd);
+	std::vector<std::string> cmds;
+	while (std::getline(scmd, stock, ' ')) {
+		cmds.push_back(stock);
+		stock.clear();
+	}
+	if (cmds.at(0) == "CAP")
 		return ;
-	else if (cmd.find("PING") == 0 && cmd.size() > 5 && cmd.find(Server::name) == 5)
+	else if (cmds.at(0) == "PING")
 			user.sendMsg("PONG\r\n");
-	else if (cmd.find("NICK") == 0 && cmd.size() > 5 && cmd.at(4) == ' ')
-		return nick(user, cmd);
-	else if (cmd.find("USER") == 0 && cmd.size() > 5 && user.userName.empty()) {
-		user.userName = cmd.substr(5, cmd.size());
+	else if (cmds.at(0) == "NICK")
+		return nick(user, cmds);
+	else if (cmds.at(0) == "USER" && user.userName.empty()) {
+		user.userName = cmds.at(1);
 		std::ifstream file("asset/motd.txt");
 		std::string text;
 		std::string line;
@@ -187,17 +200,17 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 			text += line + "\n";
 		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
 	}
-	else if (cmd.find("PASS") == 0 && cmd.size() > 5) {
+	else if (cmds.at(0) == "PASS") {
 		if (user.getIsAuth() == true)
 			user.sendMsg(Server::name +  " : You're already auth !\r\n");
-		else if (cmd.substr(5, cmd.size()) == Server::password)
+		else if (cmds.at(1) == Server::password)
 			user.setIsAuth(true);
 		else
 			user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :Password Incorrect\r\n");
 	} 
 	else if (user.getIsAuth() == false)
 		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
-	else if (cmd.find("PRIVMSG") == 0 && user.getIsAuth() == true)
+	else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmd);
 }
 

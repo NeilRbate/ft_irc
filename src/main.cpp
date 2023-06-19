@@ -31,8 +31,6 @@ int	main(int argc, char **argv) {
 	Server::createSocket();
 	Server::bindSocket();
 	std::cout << "Server socket fd -> " <<Server::getServerSocketFd() << std::endl;
-
-	Server::addChannel("#general");
 	Server::selectSocket();
 
 	return (0);

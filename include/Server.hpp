@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <sstream>
+
 #include "irc.hpp"
 #include "User.hpp"
 #include "Channel.hpp"

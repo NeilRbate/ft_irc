@@ -25,11 +25,11 @@ void User::joinChannel(std::string const & name) {
       it->users.push_back(this);
       
       // JOIN message
-      it->sendMsg(":" + this->getNickName() + " JOIN:" + name + "\r\n");
+      it->sendMsg(": " + this->getNickName() + " JOIN " + name + "\r\n");
       
       // RPL_TOPIC
       if (it->topic != "")
-        this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
+        this->sendMsg(": " + Server::name + " 332 " + this->getNickName() + " " + name + " : " + it->topic + "\r\n");
 
       // RPL_NAMREPLY
       std::string users;
@@ -39,8 +39,8 @@ void User::joinChannel(std::string const & name) {
           users += " ";
         users += (*it2)->getNickName();
       }
-      this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + users + "\r\n");
-      this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+      this->sendMsg(": " + Server::name + " 353 " + this->getNickName() + " = " + name + " : " + users + "\r\n");
+      this->sendMsg(": " + Server::name + " 366 " + this->getNickName() + " " + name + " : End of /NAMES list.\r\n");
       return ;
     }
   }
