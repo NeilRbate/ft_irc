@@ -125,50 +125,53 @@ void	nick(User & user, std::vector<std::string> & cmd) {
 		return ;
 	}
 	for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) { 
+		if (it->getNickName() == cmd.at(1) && it->getFd() !=  user.getFd() && user.getUserName().empty()) {
+			cmd.at(1) += std::to_string(rand() % 1000);
+			user.nickName = cmd.at(1);
+			std::cout << "ici " << user.nickName << " <-\n";
+		}
 		if (it->getNickName() == cmd.at(1) && it->getFd() !=  user.getFd()) {
 			user.sendMsg(":" + Server::name + " 433 " + user.nickName + ":Nickname is already in use\r\n");
 			return ;
 		}
 	}
-	if (user.nickName.empty() == false) {
+	if (user.nickName.empty()) {
 		user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
 		user.nickName = cmd.at(1);
 	}
 	else {
+		user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
 		user.nickName = cmd.at(1);
-		user.sendMsg(":" + user.nickName + " NICK " + user.nickName + "\r\n");
 	}
 	
 }
 
-void	sendPrivMsg( User & user, std::string & cmd ) {
+void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawcmd) {
 
-	size_t	point = cmd.find(":");
-	size_t	space = cmd.find(" ");
-	if (point <= space)
-		return;
-	std::string	chan = cmd.substr(space + 1, ((point - 1) - (space + 1)));
-	std::string	msg = cmd.substr(point + 1, cmd.size() - (point + 1));
-	std::cout << "channel ->" << chan << "|"  <<std::endl;
-	std::cout << "message ->" << msg << "|"  <<std::endl;
-	if (chan.at(0) == '#') {
+	if (cmd.size() < 3 || cmd[2][0] != ':')
+		return ;
+	int	i = 0;
+	while (rawcmd.at(i) != ':')
+		i++;
+	cmd.at(2) = rawcmd.substr(i + 1, (rawcmd.size() - i));
+	std::cout << "cmd ---->>>" << cmd.at(2);
+	if (cmd[1][0] == '#') {
 		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) 
-			if (it->getName() == chan) {
+			if (it->getName() == cmd.at(1)) {
 				for (std::vector<User>::iterator it2 = Server::users.begin(); it2 != Server::users.end(); it2++) {
 					if (it2->getFd() == user.fd) {
-						it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + chan + " :" + msg + "\r\n", user);
-						std::cout << ":" + user.nickName + " PRIVMSG " + chan + " :" + msg + "\r\n";
+						it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + cmd.at(1) + " :" + cmd.at(2) + "\r\n", user);
 						return ;
 					}
 				}
-				user.sendMsg(":" + Server::name + " 404 " + chan + ": Cannot send to CHANNEL\r\n");
+				user.sendMsg(":" + Server::name + " 404 " + cmd.at(1) + ": Cannot send to CHANNEL\r\n");
 				return ;
 		}
-		user.sendMsg(":" + Server::name + " 403 " + chan + ": No such CHANNEL\r\n");
+		user.sendMsg(":" + Server::name + " 403 " + cmd.at(1) + ": No such CHANNEL\r\n");
 	} else {
 		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
-			if (it->getNickName() == chan) {
-				it->sendMsg(":" + user.nickName + " PRIVMSG " + it->nickName + " : " + msg + "\r\n");
+			if (it->getNickName() == cmd.at(1)) {
+				it->sendMsg(":" + user.nickName + " PRIVMSG " + it->nickName + " : " + cmd.at(2) + "\r\n");
 				return ;
 		}
 		user.sendMsg(":" + Server::name + " 401 " + user.nickName + ": No such NICK\r\n");
@@ -191,7 +194,7 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 			user.sendMsg("PONG\r\n");
 	else if (cmds.at(0) == "NICK")
 		return nick(user, cmds);
-	else if (cmds.at(0) == "USER" && user.userName.empty()) {
+	else if (cmds.at(0) == "USER" && user.getUserName().empty() && user.getNickName().empty() == false) {
 		user.userName = cmds.at(1);
 		std::ifstream file("asset/motd.txt");
 		std::string text;
@@ -202,7 +205,7 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 	}
 	else if (cmds.at(0) == "PASS") {
 		if (user.getIsAuth() == true)
-			user.sendMsg(Server::name +  " : You're already auth !\r\n");
+			user.sendMsg(Server::name +  " :You're already auth !\r\n");
 		else if (cmds.at(1) == Server::password)
 			user.setIsAuth(true);
 		else
@@ -211,7 +214,7 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 	else if (user.getIsAuth() == false)
 		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
 	else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
-		sendPrivMsg(user, cmd);
+		sendPrivMsg(user, cmds, cmd);
 }
 
 int		Server::getServerSocketFd( void ) {
