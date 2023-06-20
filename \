@@ -221,9 +221,9 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		nick(user, cmds);
 
 	else if (cmds.at(0) == "USER" && user.getUserName().empty() && user.getNickName().empty() == false) {
-		if (cmds.size() < 2) {
+		if (cmds.size() != 2) {
 			user.sendMsg("461 " + Server::name + " " + cmds.at(0) + " :Not Enough Parameters\r\n");
-			return false;
+			return ;
 		}
 		user.userName = cmds.at(1);
 		std::ifstream file("asset/motd.txt");

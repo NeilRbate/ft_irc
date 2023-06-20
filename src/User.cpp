@@ -40,9 +40,9 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
 		if (it->getName() == cmd.at(1)) {
-      it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
-      std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
-      it->users.erase(user);
+			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
+			std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
+				it->users.erase(user);
     }
 	}	
 }
