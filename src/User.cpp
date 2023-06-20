@@ -18,6 +18,23 @@ void User::sendMsg(std::string msg) const {
   send(this->fd, msg.c_str(), msg.length(), 0);
 }
 
+/*void	User::leaveChannel(std::vector<std::string> const & cmd) {
+
+	if (cmd.size() != 2)
+      it->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+	if (cmd[1][0] != #)
+      it->sendMsg(":" + this->getNickName() + " " + cmd.at(1) + " 403 :No such channel\r\n");
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+		if (it->getName() == cmd.at(1))
+
+			
+			
+	}
+
+	
+}*/
+
 void User::joinChannel(std::vector<std::string> const & cmd) {
 
 	if (cmd.size() > 2 || cmd[1][0] != '#'){
