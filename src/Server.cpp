@@ -128,22 +128,14 @@ void	nick(User & user, std::vector<std::string> & cmd) {
 		if (it->getNickName() == cmd.at(1) && it->getFd() !=  user.getFd() && user.getUserName().empty()) {
 			cmd.at(1) += std::to_string(rand() % 1000);
 			user.nickName = cmd.at(1);
-			std::cout << "ici " << user.nickName << " <-\n";
 		}
 		if (it->getNickName() == cmd.at(1) && it->getFd() !=  user.getFd()) {
 			user.sendMsg(":" + Server::name + " 433 " + user.nickName + ":Nickname is already in use\r\n");
 			return ;
 		}
 	}
-	if (user.nickName.empty()) {
-		user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
-		user.nickName = cmd.at(1);
-	}
-	else {
-		user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
-		user.nickName = cmd.at(1);
-	}
-	
+	user.sendMsg(":" + user.nickName + " NICK " + cmd.at(1) + "\r\n");
+	user.nickName = cmd.at(1);
 }
 
 void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawcmd) {
@@ -175,6 +167,7 @@ void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawc
 				return ;
 		}
 		user.sendMsg(":" + Server::name + " 401 " + user.nickName + ": No such NICK\r\n");
+		return ;
 	}
 }
 
@@ -216,7 +209,7 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 	else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmds, cmd);
 	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true && cmds.size() > 1)
-		user.joinChannel(cmds.at(1));
+		user.joinChannel(cmds);
 		
 }
 

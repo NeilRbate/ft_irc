@@ -17,7 +17,7 @@ public:
   void setIsAuth(bool isAuth);
 
   void sendMsg(std::string msg) const;
-  void joinChannel(std::string const & name);
+  void joinChannel(std::vector<std::string> const & cmd);
 
   std::string input;
 

@@ -18,9 +18,16 @@ void User::sendMsg(std::string msg) const {
   send(this->fd, msg.c_str(), msg.length(), 0);
 }
 
-void User::joinChannel(std::string const & name) {
-  std::vector<Channel>::iterator it;
-  for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+void User::joinChannel(std::vector<std::string> const & cmd) {
+
+	if (cmd.size() > 2 || cmd[1][0] != '#'){
+      this->sendMsg(":" + cmd.at(1) + " 476 :Bad Channel Mask\r\n");
+	  return ;
+	}
+	std::string	name(cmd.at(1));
+
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
     if (it->getName() == name) {
       it->users.push_back(this);
       
@@ -45,5 +52,5 @@ void User::joinChannel(std::string const & name) {
     }
   }
   Server::addChannel(name);
-  this->joinChannel(name);
+  this->joinChannel(cmd);
 }
