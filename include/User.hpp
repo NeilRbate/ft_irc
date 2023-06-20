@@ -18,6 +18,8 @@ public:
 
   void sendMsg(std::string msg) const;
   void joinChannel(std::vector<std::string> const & cmd);
+  void leaveChannel(std::vector<std::string> const & cmd);
+  void closeConnection();
 
   std::string input;
 

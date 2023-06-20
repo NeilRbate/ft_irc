@@ -18,27 +18,44 @@ void User::sendMsg(std::string msg) const {
   send(this->fd, msg.c_str(), msg.length(), 0);
 }
 
-/*void	User::leaveChannel(std::vector<std::string> const & cmd) {
+void User::closeConnection() {
+  std::cout << "Connection closed with client fd:" << this->getFd() << std::endl;
+  close(this->getFd());
+  std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), this->getFd());
+  Server::fds.erase(index);
+  std::vector<User>::iterator it = std::find(Server::users.begin(), Server::users.end(), *this);
+  Server::users.erase(it);
+}
 
-	if (cmd.size() != 2)
-      it->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
-	if (cmd[1][0] != #)
-      it->sendMsg(":" + this->getNickName() + " " + cmd.at(1) + " 403 :No such channel\r\n");
+void	User::leaveChannel(std::vector<std::string> const & cmd) {
+
+	if (cmd.size() != 2) {
+    this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+    return ;
+  }
+	if (cmd[1][0] != '#') {
+    this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + cmd.at(1) + " :No such channel\r\n");
+    return ;
+  }
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
-		if (it->getName() == cmd.at(1))
-
-			
-			
-	}
-
-	
-}*/
+		if (it->getName() == cmd.at(1)) {
+      it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
+      std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
+      it->users.erase(user);
+    }
+	}	
+}
 
 void User::joinChannel(std::vector<std::string> const & cmd) {
 
+  if (cmd.size() < 2) {
+    this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+	  return ;
+  }
+
 	if (cmd.size() > 2 || cmd[1][0] != '#'){
-      this->sendMsg(":" + cmd.at(1) + " 476 :Bad Channel Mask\r\n");
+    this->sendMsg(":" + cmd.at(1) + " 476 :Bad Channel Mask\r\n");
 	  return ;
 	}
 	std::string	name(cmd.at(1));

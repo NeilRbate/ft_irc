@@ -5,7 +5,7 @@ SRCS = src/main.cpp \
 	   src/Channel.cpp
 OBJS = ${SRCS:.cpp=.o}
 NAME = ircserv
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g -I include/ -fsanitize=address
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g -I include/
 
 .c.o:
 	${CXX} ${CFLAGS} -c $< -o ${<:.c=.o}

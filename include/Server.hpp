@@ -14,7 +14,7 @@ public:
   static void selectSocket();
   static void newConnection();
   static void readInput(User & user);
-  static void executeCommand(User & user, std::string & cmd);
+  static bool executeCommand(User & user, std::string & cmd);
   static void addChannel(std::string const & name);
 
   static int getServerSocketFd();

@@ -62,6 +62,7 @@ void	Server::selectSocket( void ) {
 			
 			for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
 				if (it->getFd() == Server::fds[i]) {
+					std::cout << "reading input for " << it->getFd() << std::endl;
 					readInput(*it);
 					break ;
 				}
@@ -93,12 +94,7 @@ void	Server::readInput( User & user ) {
 	bzero(buffer, 512);
 	output = recv(user.getFd(), buffer, 512, 0);
 	if (output <= 0) {
-		std::cout << "Connection closed with client fd:" << user.getFd() << std::endl;
-		close(user.getFd());
-		std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), user.getFd());
-		Server::fds.erase(index);
-		std::vector<User>::iterator it = std::find(Server::users.begin(), Server::users.end(), user);
-		Server::users.erase(it);
+		user.closeConnection();
 		return ;
 	}
 	user.input += buffer;
@@ -108,7 +104,8 @@ void	Server::readInput( User & user ) {
 		user.input = user.input.substr(user.input.find("\n") + 1);
 		if (cmd.at(cmd.size() - 1) == '\r')
 			cmd = cmd.substr(0, cmd.size() - 1);
-		executeCommand(user, cmd);
+		if (executeCommand(user, cmd))
+			return ;
 	}
 }
 
@@ -171,7 +168,7 @@ void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawc
 	}
 }
 
-void	Server::executeCommand( User & user, std::string & cmd ) {
+bool	Server::executeCommand( User & user, std::string & cmd ) {
 
 	std::cout << "cmd -> " << cmd << std::endl;
 	std::string	stock;
@@ -181,12 +178,38 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		cmds.push_back(stock);
 		stock.clear();
 	}
+
 	if (cmds.at(0) == "CAP")
-		return ;
+		return false;
+	
+	else if (cmds.at(0) == "PASS") {
+		if (cmds.size() != 2) {
+			user.sendMsg("461 " + Server::name + " " + cmds.at(0) + " :Not Enough Parameters\r\n");
+			return false;
+		}
+		if (user.getIsAuth() == true) {
+			user.sendMsg("462 " + Server::name + " :Unauthorized command (already registered)\r\n");
+			return false;
+		}
+		if (cmds.at(1) == Server::password)
+			user.setIsAuth(true);
+		else {
+			user.sendMsg("464 " + Server::name + " :Password incorrect\r\n");
+			user.closeConnection();
+			return true;
+		}
+	} else if (!user.getIsAuth()) {
+		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
+		user.closeConnection();
+		return true;
+	}
+
 	else if (cmds.at(0) == "PING")
-			user.sendMsg("PONG\r\n");
+		user.sendMsg("PONG\r\n");
+
 	else if (cmds.at(0) == "NICK")
-		return nick(user, cmds);
+		nick(user, cmds);
+
 	else if (cmds.at(0) == "USER" && user.getUserName().empty() && user.getNickName().empty() == false) {
 		user.userName = cmds.at(1);
 		std::ifstream file("asset/motd.txt");
@@ -195,22 +218,14 @@ void	Server::executeCommand( User & user, std::string & cmd ) {
 		while (std::getline(file, line))
 			text += line + "\n";
 		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
-	}
-	else if (cmds.at(0) == "PASS") {
-		if (user.getIsAuth() == true)
-			user.sendMsg(":" + Server::name + " 462 " + user.getNickName() +  " :You may not reregister\r\n");
-		else if (cmds.at(1) == Server::password)
-			user.setIsAuth(true);
-		else
-			user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :Password Incorrect\r\n");
-	} 
-	else if (user.getIsAuth() == false)
-		user.sendMsg(":" + Server::name + " 464 " + user.getNickName() +  " :You're no authentify !\r\n");
-	else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
+	} else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmds, cmd);
-	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true && cmds.size() > 1)
+	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true)
 		user.joinChannel(cmds);
+	else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
+		user.leaveChannel(cmds);
 		
+	return false;
 }
 
 int		Server::getServerSocketFd( void ) {

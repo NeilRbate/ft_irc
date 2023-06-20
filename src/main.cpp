@@ -32,6 +32,7 @@ int	main(int argc, char **argv) {
 	Server::bindSocket();
 	std::cout << "Server socket fd -> " <<Server::getServerSocketFd() << std::endl;
 	Server::selectSocket();
-
+	close(Server::fds[0]);
+	std::cout << "Closing connection with socket fd " << Server::fds[0] << std::endl;
 	return (0);
 }
