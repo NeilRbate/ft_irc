@@ -36,7 +36,7 @@ void	User::quitAllChannel( void ) {
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
 		std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
 		if (user != it->users.end() && (*user)->getFd() == this->getFd()){
-			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
+      it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost"  + " PART " + it->getName() + "\r\n");
 			it->users.erase(user);
 		}
 	}
@@ -60,7 +60,7 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
         this->sendMsg("442 " + it->getName() + " :You're not on that channel\r\n");
         return ;
       }
-      it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
+      it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost"  + " PART " + it->getName() + "\r\n");
       it->users.erase(user);
     }
 	}
@@ -85,7 +85,8 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
       it->users.push_back(this);
       
       // JOIN message
-      it->sendMsg(":" + this->getNickName() + " JOIN " + name + "\r\n");
+	  std::cout << ":" + this->getNickName() + "!~" + this->getNickName() + "@localhost"  + " JOIN " + name + "\r\n";
+      it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost"  + " JOIN " + name + "\r\n");
 
       // RPL_TOPIC
       if (it->topic != "")
@@ -95,15 +96,22 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
 	  std::string userList;
       std::vector<User *>::iterator it2;
       for (it2 = it->users.begin(); it2 != it->users.end(); it2++) {
-        if (it2 != it->users.end() && it2 != it->users.begin())
+        if (it2 != it->users.begin())
           userList += " ";
         if (it->isOperator((*it2)->getNickName())) {
           userList += "@";
         }
         userList += (*it2)->getNickName();
       }
-      this->sendMsg("353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
-      this->sendMsg("366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+	  /*
+	    JOIN #general
+		:jbarbate!~jbarbate@62.129.8.171 JOIN #general
+		:lead.libera.chat 353 jbarbate = #general :jbarbate The_Blode EpicKitt- Tintle mozer
+		:lead.libera.chat 366 jbarbate #general :End of /NAMES list.
+	  */
+      this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
+      this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+	 
       return ;
     }
   }
