@@ -11,3 +11,5 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+
+std::string lower(std::string const & s);

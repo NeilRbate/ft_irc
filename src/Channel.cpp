@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string name) : isInviteOnly(false), name(name), topic("Welcome to channel " + name) { }
+Channel::Channel(std::string name) : isInviteOnly(false), name(lower(name)), topic("Welcome to channel " + name) {}
 Channel::~Channel() { }
 
 std::string Channel::getName() const { return this->name; }

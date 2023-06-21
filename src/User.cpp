@@ -49,12 +49,12 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
     return ;
   }
 	if (cmd[1][0] != '#') {
-    this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + cmd.at(1) + " :No such channel\r\n");
+    this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
     return ;
   }
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
-		if (it->getName() == cmd.at(1)) {
+		if (it->getName() == lower(cmd.at(1))) {
 			std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
 			if (it->users.size() > 1 && user != it->users.begin() && user != it->users.end()){
 				it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
@@ -74,10 +74,10 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
   }
 
 	if (cmd.size() > 2 || cmd[1][0] != '#'){
-    this->sendMsg(":" + cmd.at(1) + " 476 :Bad Channel Mask\r\n");
+    this->sendMsg(":" + lower(cmd.at(1)) + " 476 :Bad Channel Mask\r\n");
 	  return ;
 	}
-	std::string	name(cmd.at(1));
+	std::string	name(lower(cmd.at(1)));
 
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
@@ -99,11 +99,11 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
           userList += " ";
         userList += (*it2)->getNickName();
       }
-      this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
-      this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+      this->sendMsg("353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
+      this->sendMsg("366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
 	 std::cout << "-------" << std::endl;
-	 std::cout << ":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n" << std::endl;
-	 std::cout << ":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n" << std::endl;
+	 std::cout << "353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n";
+	 std::cout << "366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n";
 	 std::cout << "-------" << std::endl;
       return ;
     }

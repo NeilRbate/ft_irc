@@ -10,6 +10,14 @@ std::vector<User> Server::users;
 sockaddr_in Server::addr;
 fd_set Server::read_fd_set;
 
+std::string lower(std::string const & s) {
+	std::string output;
+	for (size_t i = 0; i < s.length(); i++) {
+		output += tolower(s[i]);
+	}
+	return output;
+}
+
 int	main(int argc, char **argv) {
 
 	if (argc != 3) {
