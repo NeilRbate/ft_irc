@@ -43,7 +43,7 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
 			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
 			std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
 				it->users.erase(user);
-    }
+    	}
 	}	
 }
 
