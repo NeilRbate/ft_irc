@@ -20,6 +20,7 @@ public:
   void joinChannel(std::vector<std::string> const & cmd);
   void leaveChannel(std::vector<std::string> const & cmd);
   void closeConnection();
+  void quitAllChannel( void );
 
   std::string input;
 

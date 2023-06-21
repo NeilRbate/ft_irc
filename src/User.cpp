@@ -29,6 +29,19 @@ void User::closeConnection() {
   Server::users.erase(it);
 }
 
+void	User::quitAllChannel( void ) {
+
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+		std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
+		if (user != it->users.end() && (*user)->getFd() == this->getFd()){
+			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
+			it->users.erase(user);
+		}
+	}
+
+}
+
 void	User::leaveChannel(std::vector<std::string> const & cmd) {
 
 	if (cmd.size() != 2) {
@@ -42,12 +55,13 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
 		if (it->getName() == cmd.at(1)) {
-			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
 			std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
-			if (it->users.size() > 1)
+			if (it->users.size() > 1 && user != it->users.begin() && user != it->users.end()){
+				it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
 				it->users.erase(user);
+			}
 			else
-				it->users.clear();
+				it->sendMsg("ERROR :Can't leave a channel who created\r\n");
     	}
 	}	
 }
@@ -71,7 +85,6 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
       it->users.push_back(this);
       
       // JOIN message
-	  std::cout << "IT -> " << &it << std::endl;
       it->sendMsg(":" + this->getNickName() + " JOIN " + name + "\r\n");
       
       // RPL_TOPIC
@@ -82,16 +95,16 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
 	  std::string userList;
       std::vector<User *>::iterator it2;
       for (it2 = it->users.begin(); it2 != it->users.end(); it2++) {
-        if (it2 != it->users.end())
+        if (it2 != it->users.end() && it2 != it->users.begin())
           userList += " ";
         userList += (*it2)->getNickName();
       }
       this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
       this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
-	 // std::cout << "-------" << std::endl;
-	 // std::cout << ":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n" << std::endl;
-	 // std::cout << ":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n" << std::endl;
-	 // std::cout << "-------" << std::endl;
+	 std::cout << "-------" << std::endl;
+	 std::cout << ":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n" << std::endl;
+	 std::cout << ":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n" << std::endl;
+	 std::cout << "-------" << std::endl;
       return ;
     }
   }

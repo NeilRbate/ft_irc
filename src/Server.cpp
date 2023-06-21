@@ -191,6 +191,11 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 
 	if (cmds.at(0) == "CAP")
 		return false;
+
+	else if (cmds.at(0) == "QUIT") {
+		user.quitAllChannel();
+		return false;
+	}
 	
 	else if (cmds.at(0) == "PASS") {
 		if (cmds.size() != 2) {
