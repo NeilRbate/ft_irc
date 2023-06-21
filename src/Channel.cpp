@@ -7,8 +7,10 @@ std::string Channel::getName() const { return this->name; }
 
 void Channel::sendMsg(std::string msg) const {
   std::vector<User *>::const_iterator it;
-  for (it = users.begin(); it != users.end(); it++)
-    (*it)->sendMsg(msg);
+  if (users.size() > 1) {
+	  for (it = users.begin(); it != users.end(); it++)
+		  (*it)->sendMsg(msg);
+  }
 }
 
 void Channel::sendMsgFromUser(std::string msg, User &user) const {

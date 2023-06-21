@@ -15,7 +15,9 @@ std::string User::getRealName() const { return this->realName; }
 void User::setIsAuth(bool isAuth) { this->isAuth = isAuth; }
 
 void User::sendMsg(std::string msg) const {
-  send(this->fd, msg.c_str(), msg.length(), 0);
+	if (send(this->fd, msg.c_str(), msg.length(), 0) < 0)
+		std::cout << "ERROR: impossible to send" << std::endl;
+
 }
 
 void User::closeConnection() {
@@ -42,7 +44,10 @@ void	User::leaveChannel(std::vector<std::string> const & cmd) {
 		if (it->getName() == cmd.at(1)) {
 			it->sendMsg(":" + this->getNickName() + " PART " + it->getName() + "\r\n");
 			std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
+			if (it->users.size() > 1)
 				it->users.erase(user);
+			else
+				it->users.clear();
     	}
 	}	
 }
@@ -66,6 +71,7 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
       it->users.push_back(this);
       
       // JOIN message
+	  std::cout << "IT -> " << &it << std::endl;
       it->sendMsg(":" + this->getNickName() + " JOIN " + name + "\r\n");
       
       // RPL_TOPIC
@@ -73,15 +79,19 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
         this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
 
       // RPL_NAMREPLY
-      std::string users;
+	  std::string userList;
       std::vector<User *>::iterator it2;
       for (it2 = it->users.begin(); it2 != it->users.end(); it2++) {
-        if (it2 != it->users.begin())
-          users += " ";
-        users += (*it2)->getNickName();
+        if (it2 != it->users.end())
+          userList += " ";
+        userList += (*it2)->getNickName();
       }
-      this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + users + "\r\n");
+      this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
       this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+	 // std::cout << "-------" << std::endl;
+	 // std::cout << ":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n" << std::endl;
+	 // std::cout << ":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n" << std::endl;
+	 // std::cout << "-------" << std::endl;
       return ;
     }
   }
