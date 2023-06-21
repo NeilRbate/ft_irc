@@ -5,7 +5,7 @@ void	Server::createSocket( void ) {
 		Server::fds.push_back(socket(AF_INET, SOCK_STREAM, 0));
 	}
 	catch (std::exception & e) {
-		std::cout << "Error: " << e.what() << std::endl;
+		std::cout << RED << "ERRROR: " << e.what() << RESET << std::endl;
 		return ;
 	}
 }
@@ -17,11 +17,11 @@ void	Server::bindSocket( void ) {
 	Server::addr.sin_port = htons(Server::port);
 
 	if (bind(Server::getServerSocketFd(), (struct sockaddr *)&Server::addr, sizeof(Server::addr))) {
-		std::cout << "Error bind port: " << strerror(errno) << std::endl;
+		std::cout << RED << "ERROR: bind port: " << strerror(errno) << RESET << std::endl;
 		exit(1);
 	}
 	if (listen(Server::getServerSocketFd(), FD_SETSIZE)) {
-		std::cout << "Error bind port: " << strerror(errno) << std::endl;
+		std::cout << RED << "ERROR: bind port: " << strerror(errno) << RESET << std::endl;
 		exit(1);
 	}
 }
@@ -62,7 +62,6 @@ void	Server::selectSocket( void ) {
 			
 			for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
 				if (it->getFd() == Server::fds[i]) {
-					std::cout << "reading input for " << it->getFd() << std::endl;
 					readInput(*it);
 					break ;
 				}
@@ -80,9 +79,9 @@ void	Server::newConnection( void ) {
 	if (client_fd >= 0) {
 		Server::fds.push_back(client_fd);
 		Server::users.push_back(User(client_fd));
-		std::cout << "New connection with client fd: " << client_fd << std::endl;
+		std::cout << MAGENTA "New connection with client fd: " << client_fd << RESET << std::endl;
 	} else {
-		std::cout << "Failed to connect new client" << std::endl;
+		std::cout << RED "ERROR: Failed to connect new client" << RESET << std::endl;
 	}
 }
 
@@ -153,18 +152,19 @@ void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawc
 	while (rawcmd.at(i) != ':')
 		i++;
 	cmd.at(2) = rawcmd.substr(i + 1, (rawcmd.size() - i));
-	std::cout << "cmd ---->>>" << cmd.at(2);
+
 	if (cmd[1][0] == '#') {
-		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) 
-			if (it->getName() == cmd.at(1)) {
-				for (std::vector<User>::iterator it2 = Server::users.begin(); it2 != Server::users.end(); it2++) {
-					if (it2->getFd() == user.fd) {
+		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+			if (it->getName() == lower(cmd.at(1))) {
+				for (std::vector<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
+					if ((*it2)->getFd() == user.fd) {
 						it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + cmd.at(1) + " :" + cmd.at(2) + "\r\n", user);
 						return ;
 					}
 				}
 				user.sendMsg(":" + Server::name + " 404 " + cmd.at(1) + ": Cannot send to CHANNEL\r\n");
 				return ;
+			}
 		}
 		user.sendMsg(":" + Server::name + " 403 " + cmd.at(1) + ": No such CHANNEL\r\n");
 	} else {
@@ -180,7 +180,7 @@ void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawc
 
 bool	Server::executeCommand( User & user, std::string & cmd ) {
 
-	std::cout << "cmd -> " << cmd << std::endl;
+	std::cout << BLUE << "[fd: " << user.getFd() << " (" << user.getNickName() << ")] " << RESET << cmd << std::endl;
 	std::string	stock;
 	std::stringstream	scmd(cmd);
 	std::vector<std::string> cmds;
@@ -252,13 +252,13 @@ int		Server::getServerSocketFd( void ) {
 	return (Server::fds[0]);
 }
 
-void	Server::addChannel(std::string const & name) {
+void	Server::addChannel(std::string const & name, std::string const & operatorName) {
     
     for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == name) {
-            std::cout << "Channel already exist" << std::endl;
+            std::cout << RED << "ERROR: Channel already exist" << RESET << std::endl;
             return ;
         }
     }
-    Server::channels.push_back(Channel(name));
+    Server::channels.push_back(Channel(name, operatorName));
 }

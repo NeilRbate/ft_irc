@@ -38,9 +38,9 @@ int	main(int argc, char **argv) {
 
 	Server::createSocket();
 	Server::bindSocket();
-	std::cout << "Server socket fd -> " <<Server::getServerSocketFd() << std::endl;
+	std::cout << MAGENTA << "Listening with fd " <<Server::getServerSocketFd() << RESET << std::endl;
 	Server::selectSocket();
 	close(Server::fds[0]);
-	std::cout << "Closing connection with socket fd " << Server::fds[0] << std::endl;
+	std::cout << MAGENTA << "Closing connection " << RESET << std::endl;
 	return (0);
 }
