@@ -200,26 +200,25 @@ void User::invite(std::vector<std::string> cmd, std::string rawcmd) {
             return;
         }
 
-        std::cout << "Coucou1\n";
         target->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " INVITE " + cmd.at(1) + " " + it->getName() + "\r\n");
         target->joinChannel(it->getName(), false);
-        std::cout << "Coucou2\n";
         return;
     }
 }
 
 void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) {
     (void)rawcmd;
+	if (cmd.size() == 2 && cmd.at(1).empty() == false && cmd[1][0] == '#')
+		return ;
+	//Il faut probablement retourner les droits du serveur
     if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
         this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
         return;
     }
+    if (cmd[1][0] != '#' && cmd.size() == 3 && cmd.at(2) == "+i")
+		return;
     if (cmd[1][0] != '#') {
         this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
-        return;
-    }
-    if (cmd[2][0] != '-' || cmd[2][0] != '+') {
-        this->sendMsg("ERROR: Invalid MODE format\r\n");
         return;
     }
     std::vector<Channel>::iterator it;

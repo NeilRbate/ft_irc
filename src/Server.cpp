@@ -287,6 +287,7 @@ bool Server::executeCommand(User &user, std::string &cmd) {
             user.sendMsg(":" + lower(cmds.at(1)) + " 476 :Bad Channel Mask\r\n");
             return false;
         }
+		std::cout << "plop\n";
         std::string channelName = cmds.at(1);
         user.joinChannel(lower(channelName), true);
     } else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
