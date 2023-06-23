@@ -24,6 +24,7 @@ void User::sendMsg(std::string msg) const {
 }
 
 void User::closeConnection() {
+	this->quitAllChannels();
     std::cout << MAGENTA << "Connection closed with client fd: " << this->getFd() << RESET << std::endl;
     close(this->getFd());
     std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), this->getFd());
@@ -32,7 +33,7 @@ void User::closeConnection() {
     Server::users.erase(it);
 }
 
-void User::quitAllChannel(void) {
+void User::quitAllChannels(void) {
     std::vector<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);

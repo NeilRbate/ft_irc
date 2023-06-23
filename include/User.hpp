@@ -23,7 +23,7 @@ public:
   void closeConnection();
   void topic(std::vector<std::string> cmd, std::string rawcmd);
   void invite(std::vector<std::string> cmd, std::string rawcmd);
-  void quitAllChannel( void );
+  void quitAllChannels( void );
 
   std::string input;
 

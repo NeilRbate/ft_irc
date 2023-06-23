@@ -235,7 +235,7 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		return false;
 
 	else if (cmds.at(0) == "QUIT") {
-		user.quitAllChannel();
+		user.closeConnection();
 		return false;
 	}
 	
