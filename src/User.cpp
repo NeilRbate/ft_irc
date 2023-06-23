@@ -15,6 +15,7 @@ std::string User::getRealName() const { return this->realName; }
 void User::setIsAuth(bool isAuth) { this->isAuth = isAuth; }
 
 void User::sendMsg(std::string msg) const {
+	fcntl(this->fd, F_SETFL, O_NONBLOCK);
 	if (send(this->fd, msg.c_str(), msg.length(), 0) < 0)
 		std::cout << RED << "ERROR: impossible to send" << RESET << std::endl;
   else
