@@ -283,8 +283,18 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		sendPrivMsg(user, cmds, cmd);
 	else if (cmds.at(0) == "NOTICE" && user.getIsAuth() == true)
 		sendNoticeMsg(user, cmds, cmd);
-	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true)
-		user.joinChannel(cmds);
+	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true) {
+		if (cmds.size() < 2) {
+			user.sendMsg(":" + user.getNickName() + " 461 :Not Enough Parameters\r\n");
+			return false;
+		}
+		if (cmds.size() > 2 || cmds[1][0] != '#') {
+			user.sendMsg(":" + lower(cmds.at(1)) + " 476 :Bad Channel Mask\r\n");
+			return false;
+		}
+		std::string channelName = cmds.at(1);
+		user.joinChannel(lower(channelName));
+	}
 	else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
 		user.leaveChannel(cmds);
 	else if (cmds.at(0) == "KICK" && user.getIsAuth() == true)

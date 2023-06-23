@@ -17,7 +17,7 @@ public:
   void setIsAuth(bool isAuth);
 
   void sendMsg(std::string msg) const;
-  void joinChannel(std::vector<std::string> const & cmd);
+  void joinChannel(std::string name);
   void leaveChannel(std::vector<std::string> const & cmd);
   void kickChannel(std::vector<std::string> const & cmd, std::string const & rawcmd);
   void closeConnection();
