@@ -44,6 +44,34 @@ void	User::quitAllChannel( void ) {
 
 }
 
+void	User::kickChannel(std::vector<std::string> const & cmd) {
+	if (cmd.size()  < 4 || cmd.at(2).empty()) {
+    this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+    return ;
+  }
+	if (cmd.at(1).empty() || cmd[1][0] != '#') {
+    this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+    return ;
+  }
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+		if (it->getName() == lower(cmd.at(1))) {
+			//check si this est operator ici !
+			for (std::vector<User *>::iterator user = it->users.begin(); user != it->users.end(); user++) {
+				if ((*user)->getNickName() == cmd.at(2)){ 
+      				it->sendMsg(":" + cmd.at(2) + "!~" + cmd.at(2) + "@localhost KICK " + cmd.at(1) + " "  + cmd.at(2) + "\r\n");
+      				it->users.erase(user);
+					return ;
+				}
+				if (user == it->users.end()) {
+        			this->sendMsg("442 " + cmd.at(2) + " :Not on channel\r\n");
+        			return ;
+      			}	
+			}
+    	}
+	}
+}
+
 void	User::leaveChannel(std::vector<std::string> const & cmd) {
 	if (cmd.size() != 2) {
     this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
