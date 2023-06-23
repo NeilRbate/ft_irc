@@ -24,7 +24,7 @@ void User::sendMsg(std::string msg) const {
 }
 
 void User::closeConnection() {
-	this->quitAllChannels();
+    this->quitAllChannels();
     std::cout << MAGENTA << "Connection closed with client fd: " << this->getFd() << RESET << std::endl;
     close(this->getFd());
     std::vector<int>::iterator index = std::find(Server::fds.begin(), Server::fds.end(), this->getFd());
@@ -103,10 +103,16 @@ void User::leaveChannel(std::vector<std::string> const &cmd) {
     }
 }
 
-void User::joinChannel(std::string name) {
+void User::joinChannel(std::string name, bool checkInviteOnly) {
     std::vector<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == name) {
+            // Check invite-only
+            if (it->isInviteOnly && checkInviteOnly && !it->isOperator(this->getNickName())) {
+                this->sendMsg(this->getNickName() + " " + it->getName() + " :Cannot join channel (+i)\r\n");
+                return;
+            }
+
             it->users.push_back(this);
 
             // JOIN message
@@ -116,6 +122,8 @@ void User::joinChannel(std::string name) {
             // RPL_TOPIC
             if (it->topic != "")
                 this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
+            else
+                this->sendMsg(":" + Server::name + " 331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
 
             // RPL_NAMREPLY
             std::string userList;
@@ -136,17 +144,17 @@ void User::joinChannel(std::string name) {
     }
     Server::addChannel(name, this->getNickName());
 
-    this->joinChannel(name);
+    this->joinChannel(name, checkInviteOnly);
 }
 
 void User::topic(std::vector<std::string> cmd, std::string rawcmd) {
-    if (cmd.size() < 2 || cmd.at(1).empty() || cmd[2].empty() || cmd[2][0] != ':') {
+    if (cmd.size() < 2 || cmd[1].empty() || cmd[2].empty() || cmd[2][0] != ':') {
         this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
         return;
     }
     std::vector<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
-        if (it->getName() == cmd.at(1) && it->isOperator(this->getNickName())) {
+        if (it->getName() == cmd.at(1) && (it->isTopicFree || it->isOperator(this->getNickName()))) {
             it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
             this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
             return;
@@ -194,63 +202,59 @@ void User::invite(std::vector<std::string> cmd, std::string rawcmd) {
 
         std::cout << "Coucou1\n";
         target->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " INVITE " + cmd.at(1) + " " + it->getName() + "\r\n");
-        target->joinChannel(it->getName());
+        target->joinChannel(it->getName(), false);
         std::cout << "Coucou2\n";
         return;
     }
 }
 
-void	User::mode(std::vector<std::string> const & cmd, std::string const & rawcmd) {
-
-	(void)rawcmd;
-	if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
-		this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) {
+    (void)rawcmd;
+    if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
+        this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
         return;
-	}
-	if (cmd[1][0] != '#') {
-		this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+    }
+    if (cmd[1][0] != '#') {
+        this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
         return;
-	}
-	if (cmd[2][0] != '-' || cmd[2][0] != '+') {
-		this->sendMsg("ERROR: Invalid MODE format\r\n");
-		return;
-	}
-	std::vector<Channel>::iterator	it;
-	for (it = Server::channels.begin(); it != Server::channels.end(); it++)
-	{
-		if (it == Server::channels.end()) {
-        	this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
-			return ;
-		}
-		if (it->getName() == cmd.at(1))
-			break;
-	}
-	if (it->isOperator(this->getNickName()) == false) {
-		this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
-		return ;
-	}
-	if (cmd[2] == "+i" && cmd.size() == 3)
-		it->isInviteOnly = true;
-	else if (cmd[2] == "+i" && cmd.size() == 3)
-		it->isInviteOnly = false;
-	else if (cmd[2] == "+t" && cmd.size() == 3)
-		it->isTopicFree = true;
-	else if (cmd[2] == "-t" && cmd.size() == 3)
-		it->isTopicFree = false;
-	else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false)
-		it->password = cmd.at(3);
-	else if (cmd[2] == "-k" && cmd.size() == 3)
-		it->password.clear();
-	else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
-		if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
-			this->sendMsg("501 " + this->getNickName() +  ":Unknown MODE flag\r\n");
-			return;
-		}
-		it->userLimit = stoi(cmd.at(3));
-	}
-	else if (cmd[2] == "-l" && cmd.size() == 3)
-		it->userLimit = UINT_MAX;
-	else
-		this->sendMsg(":" + this->getNickName() + " 501 :Flag not found\r\n");
-
+    }
+    if (cmd[2][0] != '-' || cmd[2][0] != '+') {
+        this->sendMsg("ERROR: Invalid MODE format\r\n");
+        return;
+    }
+    std::vector<Channel>::iterator it;
+    for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+        if (it == Server::channels.end()) {
+            this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+            return;
+        }
+        if (it->getName() == cmd.at(1))
+            break;
+    }
+    if (it->isOperator(this->getNickName()) == false) {
+        this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
+        return;
+    }
+    if (cmd[2] == "+i" && cmd.size() == 3)
+        it->isInviteOnly = true;
+    else if (cmd[2] == "+i" && cmd.size() == 3)
+        it->isInviteOnly = false;
+    else if (cmd[2] == "+t" && cmd.size() == 3)
+        it->isTopicFree = true;
+    else if (cmd[2] == "-t" && cmd.size() == 3)
+        it->isTopicFree = false;
+    else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false)
+        it->password = cmd.at(3);
+    else if (cmd[2] == "-k" && cmd.size() == 3)
+        it->password.clear();
+    else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
+        if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
+            this->sendMsg("501 " + this->getNickName() + ":Unknown MODE flag\r\n");
+            return;
+        }
+        it->userLimit = stoi(cmd.at(3));
+    } else if (cmd[2] == "-l" && cmd.size() == 3)
+        it->userLimit = UINT_MAX;
+    else
+        this->sendMsg(":" + this->getNickName() + " 501 :Flag not found\r\n");
 }
