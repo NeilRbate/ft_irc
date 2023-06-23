@@ -24,6 +24,7 @@ public:
   void topic(std::vector<std::string> cmd, std::string rawcmd);
   void invite(std::vector<std::string> cmd, std::string rawcmd);
   void quitAllChannels( void );
+  void mode(std::vector<std::string> const & cmd, std::string const & rawcmd);
 
   std::string input;
 

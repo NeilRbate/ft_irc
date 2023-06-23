@@ -199,3 +199,58 @@ void User::invite(std::vector<std::string> cmd, std::string rawcmd) {
         return;
     }
 }
+
+void	User::mode(std::vector<std::string> const & cmd, std::string const & rawcmd) {
+
+	(void)rawcmd;
+	if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
+		this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+        return;
+	}
+	if (cmd[1][0] != '#') {
+		this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+        return;
+	}
+	if (cmd[2][0] != '-' || cmd[2][0] != '+') {
+		this->sendMsg("ERROR: Invalid MODE format\r\n");
+		return;
+	}
+	std::vector<Channel>::iterator	it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++)
+	{
+		if (it == Server::channels.end()) {
+        	this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+			return ;
+		}
+		if (it->getName() == cmd.at(1))
+			break;
+	}
+	if (it->isOperator(this->getNickName()) == false) {
+		this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
+		return ;
+	}
+	if (cmd[2] == "+i" && cmd.size() == 3)
+		it->isInviteOnly = true;
+	else if (cmd[2] == "+i" && cmd.size() == 3)
+		it->isInviteOnly = false;
+	else if (cmd[2] == "+t" && cmd.size() == 3)
+		it->isTopicFree = true;
+	else if (cmd[2] == "-t" && cmd.size() == 3)
+		it->isTopicFree = false;
+	else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false)
+		it->password = cmd.at(3);
+	else if (cmd[2] == "-k" && cmd.size() == 3)
+		it->password.clear();
+	else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
+		if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
+			this->sendMsg("501 " + this->getNickName() +  ":Unknown MODE flag\r\n");
+			return;
+		}
+		it->userLimit = stoi(cmd.at(3));
+	}
+	else if (cmd[2] == "-l" && cmd.size() == 3)
+		it->userLimit = UINT_MAX;
+	else
+		this->sendMsg(":" + this->getNickName() + " 501 :Flag not found\r\n");
+
+}

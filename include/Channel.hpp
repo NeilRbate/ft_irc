@@ -16,13 +16,12 @@ public:
 
   bool isOperator(std::string nickName);
 
-  void	setInviteOnly();
-  void	setTopicAccess();
-
   bool isInviteOnly;
   bool isTopicFree;
   const std::string name;
+  unsigned int	userLimit;
   std::string topic;
   std::vector<User*> users;
   std::vector<std::string> operatorUsers;
+  std::string	password;
 };

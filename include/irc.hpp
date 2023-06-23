@@ -11,6 +11,7 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <limits.h>
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[30m"

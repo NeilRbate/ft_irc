@@ -35,17 +35,3 @@ void	Channel::changeTopic(std::string cmd) {
 bool Channel::isOperator(std::string nickName) {
   return (std::find(this->operatorUsers.begin(), this->operatorUsers.end(), nickName) != this->operatorUsers.end());
 }
-
-void	Channel::setInviteOnly( void ) {
-	if (this->isInviteOnly == true)
-		this->isInviteOnly = false;
-	else
-		this->isInviteOnly = true;
-}
-
- void	setTopicAccess ( void ) {
-	 if (this->TopicAccess == true)
-		 this->TopicAccess == false;
-	 else
-		 this->TopicAccess == true;
- }

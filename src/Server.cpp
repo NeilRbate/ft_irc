@@ -303,6 +303,8 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		user.topic(cmds, cmd);
 	else if (cmds.at(0) == "INVITE" && user.getIsAuth() == true)
 		user.invite(cmds, cmd);
+	else if (cmds.at(0) == "MODE" && user.getIsAuth() == true)
+		user.mode(cmds, cmd);
 		
 	return false;
 }
