@@ -68,7 +68,7 @@ void	User::kickChannel(std::vector<std::string> const & cmd, std::string const &
 			}
 			for (std::vector<User *>::iterator user = it->users.begin(); user != it->users.end(); user++) {
 				if ((*user)->getNickName() == cmd.at(2)){ 
-      				it->sendMsg(":" + this->getNickName + "!~" + this->getNickName() + "@localhost KICK " + cmd.at(1) + " "  + cmd.at(2) + " " + rawcmd.substr(rawcmd.find(":")) + "\r\n");
+      				it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost KICK " + cmd.at(1) + " "  + cmd.at(2) + " " + rawcmd.substr(rawcmd.find(":")) + "\r\n");
       				it->users.erase(user);
 					return ;
 				}
@@ -141,12 +141,6 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
         }
         userList += (*it2)->getNickName();
       }
-	  /*
-	    JOIN #general
-		:jbarbate!~jbarbate@62.129.8.171 JOIN #general
-		:lead.libera.chat 353 jbarbate = #general :jbarbate The_Blode EpicKitt- Tintle mozer
-		:lead.libera.chat 366 jbarbate #general :End of /NAMES list.
-	  */
       this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
       this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
 	 
@@ -156,4 +150,20 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
   Server::addChannel(name, this->getNickName());
 
   this->joinChannel(cmd);
+}
+
+void	User::topic(std::vector<std::string> cmd, std::string rawcmd) {
+
+	if (cmd.size() < 2 || cmd.at(1).empty() || cmd[1][0] != ':') {
+    	this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+		return ;
+	}
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+		if (it->getName() == lower(cmd.at(1)) && it->isOperator(this->getNickName())) {
+			it->changeTopic(rawcmd.substr(rawcmd.find(":")));
+        	this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + Server::name + " :" + it->topic + "\r\n");
+			return ;
+		}
+	}
 }

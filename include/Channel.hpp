@@ -12,6 +12,7 @@ public:
 
   void sendMsg(std::string msg) const;
   void sendMsgFromUser(std::string msg, User &user) const;
+  void changeTopic(std::string cmd);
 
   bool isOperator(std::string nickName);
 

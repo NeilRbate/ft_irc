@@ -21,6 +21,7 @@ public:
   void leaveChannel(std::vector<std::string> const & cmd);
   void kickChannel(std::vector<std::string> const & cmd, std::string const & rawcmd);
   void closeConnection();
+  void topic(std::vector<std::string> cmd, std::string rawcmd);
   void quitAllChannel( void );
 
   std::string input;

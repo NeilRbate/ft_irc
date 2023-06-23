@@ -287,6 +287,8 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		user.leaveChannel(cmds);
 	else if (cmds.at(0) == "KICK" && user.getIsAuth() == true)
 		user.kickChannel(cmds, cmd);
+	else if (cmds.at(0) == "TOPIC" && user.getIsAuth() == true)
+		user.topic(cmds, cmd);
 		
 	return false;
 }

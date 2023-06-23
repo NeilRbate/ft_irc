@@ -24,6 +24,14 @@ void Channel::sendMsgFromUser(std::string msg, User &user) const {
   }
 }
 
+void	Channel::changeTopic(std::string cmd) {
+
+	if (cmd.empty())
+		this->topic = "";
+	else
+		this->topic = cmd;
+}
+
 bool Channel::isOperator(std::string nickName) {
   return (std::find(this->operatorUsers.begin(), this->operatorUsers.end(), nickName) != this->operatorUsers.end());
 }
