@@ -286,7 +286,7 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 	else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
 		user.leaveChannel(cmds);
 	else if (cmds.at(0) == "KICK" && user.getIsAuth() == true)
-		user.kickChannel(cmds);
+		user.kickChannel(cmds, cmd);
 		
 	return false;
 }
