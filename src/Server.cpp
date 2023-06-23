@@ -277,7 +277,7 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		std::string text;
 		std::string line;
 		while (std::getline(file, line))
-			text += line + "\n";
+			text += MAGENTA + line + RESET + "\n";
 		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
 	} else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmds, cmd);
@@ -291,6 +291,8 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		user.kickChannel(cmds, cmd);
 	else if (cmds.at(0) == "TOPIC" && user.getIsAuth() == true)
 		user.topic(cmds, cmd);
+	else if (cmds.at(0) == "INVITE" && user.getIsAuth() == true)
+		user.invite(cmds, cmd);
 		
 	return false;
 }

@@ -160,9 +160,46 @@ void	User::topic(std::vector<std::string> cmd, std::string rawcmd) {
 	}
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
-		if (it->getName() == lower(cmd.at(1)) && it->isOperator(this->getNickName())) {
+		if (it->getName() == cmd.at(1) && it->isOperator(this->getNickName())) {
 			it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
         	this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
+			return ;
+		}
+	}
+}
+
+void	User::invite(std::vector<std::string> cmd, std::string rawcmd) {
+
+	(void)rawcmd;
+	if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
+    	this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
+		return ;
+	}
+	std::vector<Channel>::iterator it;
+	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
+		if (it->getName() == cmd.at(2) && it->isOperator(this->getNickName())) {
+			std::vector<User *>::iterator name;
+			for (name = it->users.begin(); name != it->users.end(); name++){}
+			if (name != it->users.end()) {
+        		this->sendMsg("443 " + cmd.at(1) + " :is already on channel\r\n");
+				return ;
+			}
+			std::vector<User>::iterator us;
+			for (us = Server::users.begin(); us != Server::users.end(); us++) {
+				if (us == Server::users.end()) {
+					//Message si l'user néxiste pas a remplacer !!!
+        			this->sendMsg("443 " + cmd.at(1) + " :is already on channel\r\n");
+					return;
+				}
+			}
+			std::cout << "Coucou1\n";
+    	  	this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost"  + " INVITE " + cmd.at(1) + " " + us->getNickName() + "\r\n");
+			us->joinChannel(cmd);
+			std::cout << "Coucou2\n";
+			return ;
+		}
+		else if (it->getName() == cmd.at(2) && it->isOperator(this->getNickName()) == false) {
+	 		this->sendMsg("482 " + this->getNickName() + " " + it->getName()  + " :You're not channel operator\r\n");
 			return ;
 		}
 	}
