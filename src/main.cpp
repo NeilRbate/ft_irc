@@ -40,7 +40,15 @@ int	main(int argc, char **argv) {
 	Server::bindSocket();
 	std::cout << MAGENTA << "Listening with fd " <<Server::getServerSocketFd() << RESET << std::endl;
 	Server::selectSocket();
-	close(Server::fds[0]);
+
+	while (Server::users.size() > 0) {
+		User &user = Server::users[0];
+		user.sendMsg("ERROR :Server is closed\r\n");
+		user.closeConnection();
+	}
+
+	close(Server::getServerSocketFd());
+
 	std::cout << MAGENTA << "Closing connection " << RESET << std::endl;
 	return (0);
 }

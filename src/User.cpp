@@ -154,15 +154,15 @@ void User::joinChannel(std::vector<std::string> const & cmd) {
 
 void	User::topic(std::vector<std::string> cmd, std::string rawcmd) {
 
-	if (cmd.size() < 2 || cmd.at(1).empty() || cmd[1][0] != ':') {
+	if (cmd.size() < 2 || cmd.at(1).empty() || cmd[2].empty() || cmd[2][0] != ':') {
     	this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
 		return ;
 	}
 	std::vector<Channel>::iterator it;
 	for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
 		if (it->getName() == lower(cmd.at(1)) && it->isOperator(this->getNickName())) {
-			it->changeTopic(rawcmd.substr(rawcmd.find(":")));
-        	this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + Server::name + " :" + it->topic + "\r\n");
+			it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
+        	this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
 			return ;
 		}
 	}

@@ -1,8 +1,10 @@
 #include "Server.hpp"
 
 void	Server::createSocket( void ) {
+	int iSetOption = 1;
 	try {
 		Server::fds.push_back(socket(AF_INET, SOCK_STREAM, 0));
+		setsockopt(Server::getServerSocketFd(), SOL_SOCKET, SO_REUSEADDR, (char*)&iSetOption, sizeof(iSetOption));
 	}
 	catch (std::exception & e) {
 		std::cout << RED << "ERRROR: " << e.what() << RESET << std::endl;
