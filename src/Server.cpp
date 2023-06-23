@@ -134,6 +134,46 @@ void	nick(User & user, std::vector<std::string> & cmd) {
 	user.nickName = cmd.at(1);
 }
 
+void	sendNoticeMsg( User & user, std::vector<std::string> & cmd , std::string rawcmd) {
+
+	if (cmd.size() == 1) {
+			return ;
+	}
+	if (cmd.size() == 2) {
+		return ;
+	}
+	if (cmd[2][0] != ':') {
+		user.sendMsg("ERROR :Invalid message format\r\n");
+		return ;
+	}
+	int	i = 0;
+	while (rawcmd.at(i) != ':')
+		i++;
+	cmd.at(2) = rawcmd.substr(i + 1, (rawcmd.size() - i));
+
+	if (cmd[1][0] == '#') {
+		for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+			if (it->getName() == lower(cmd.at(1))) {
+				for (std::vector<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
+					if ((*it2)->getFd() == user.fd) {
+						it->sendMsgFromUser(":" + user.nickName + " NOTICE " + cmd.at(1) + " :" + cmd.at(2) + "\r\n", user);
+						return ;
+					}
+				}
+				return ;
+			}
+		}
+	} else {
+		for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) 
+			if (it->getNickName() == cmd.at(1)) {
+				it->sendMsg(":" + user.nickName + " NOTICE " + it->nickName + " : " + cmd.at(2) + "\r\n");
+				return ;
+		}
+		return ;
+	}
+}
+
+
 void	sendPrivMsg( User & user, std::vector<std::string> & cmd , std::string rawcmd) {
 
 	if (cmd.size() == 1) {
@@ -237,9 +277,10 @@ bool	Server::executeCommand( User & user, std::string & cmd ) {
 		while (std::getline(file, line))
 			text += line + "\n";
 		user.sendMsg(":" + Server::name + " 001 " + user.nickName + " :" + text + "\r\n");
-	} else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true) {
+	} else if (cmds.at(0) == "PRIVMSG" && user.getIsAuth() == true)
 		sendPrivMsg(user, cmds, cmd);
-	}
+	else if (cmds.at(0) == "NOTICE" && user.getIsAuth() == true)
+		sendNoticeMsg(user, cmds, cmd);
 	else if (cmds.at(0) == "JOIN" && user.getIsAuth() == true)
 		user.joinChannel(cmds);
 	else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
