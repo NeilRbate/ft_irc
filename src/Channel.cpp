@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string name, std::string operatorName) : isInviteOnly(false), isTopicFree(true), name(lower(name)), topic("") {
+Channel::Channel(std::string name, std::string operatorName) : isInviteOnly(false), isTopicFree(true), name(lower(name)), userLimit(UINT_MAX), topic("") {
     this->operatorUsers.push_back(operatorName);
 }
 Channel::~Channel() {}

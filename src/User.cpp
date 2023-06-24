@@ -121,9 +121,9 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
 
             // RPL_TOPIC
             if (it->topic != "")
-                this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
+                it->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
             else
-                this->sendMsg(":" + Server::name + " 331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
+                it->sendMsg(":" + Server::name + " 331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
 
             // RPL_NAMREPLY
             std::string userList;
@@ -156,7 +156,7 @@ void User::topic(std::vector<std::string> cmd, std::string rawcmd) {
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == cmd.at(1) && (it->isTopicFree || it->isOperator(this->getNickName()))) {
             it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
-            this->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
+            it->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
             return;
         }
     }
@@ -206,11 +206,39 @@ void User::invite(std::vector<std::string> cmd, std::string rawcmd) {
     }
 }
 
+/*void	channelMode(User const & user, Channel const & chan) {
+	 std::string mode;
+      	 chan->isInviteOnly ? mode += "+i" : mode += "-i";
+      	 chan->isTopicFree ? mode += "+t" : mode += "-t";
+	 chan->password.empty() ? mode += "-k" : mode += "+k";
+	 chan->userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
+	 chan->isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
+	 chan->sendMsg(":" + user->getNickName() + "!~" + user->getNickName() + "@localhost" + " MODE " + chan->getName() + " " + mode + "\r\n");
+	 return;
+
+}*/
+
 void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) {
     (void)rawcmd;
-	if (cmd.size() == 2 && cmd.at(1).empty() == false && cmd[1][0] == '#')
-		return ;
-	//Il faut probablement retourner les droits du serveur
+    if (cmd.size() == 2 && cmd.at(1).empty() == false && cmd[1][0] == '#'){
+	    std::vector<Channel>::iterator it1;
+	    for (it1 = Server::channels.begin(); it1 != Server::channels.end(); it1++) {
+		    if (it1 == Server::channels.end()) {
+		    	    this->sendMsg(":" + Server::name + " 403 " + this->nickName + " " + lower(cmd.at(1)) + " :No such channel\r\n");
+			    return;
+		    }
+		    if (it1->getName() == cmd.at(1)) {
+		    	    std::string mode;
+		    	    it1->isInviteOnly ? mode += "+i" : mode += "-i";
+		    	    it1->isTopicFree ? mode += "+t" : mode += "-t";
+			    it1->password.empty() ? mode += "-k" : mode += "+k";
+			    it1->userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
+			    it1->isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
+			    it1->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it1->getName() + " " + mode + "\r\n");
+		    	    return;
+		    }
+	    }
+    }
     if (cmd.size() < 3 || cmd.at(1).empty() || cmd.at(2).empty()) {
         this->sendMsg(":" + this->getNickName() + " 461 :Not Enough Parameters\r\n");
         return;
@@ -234,27 +262,42 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
         this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
         return;
     }
-    if (cmd[2] == "+i" && cmd.size() == 3)
+    if (cmd[2] == "+i" && cmd.size() == 3) {
         it->isInviteOnly = true;
-    else if (cmd[2] == "+i" && cmd.size() == 3)
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +i\r\n");
+    }
+    else if (cmd[2] == "-i" && cmd.size() == 3) {
         it->isInviteOnly = false;
-    else if (cmd[2] == "+t" && cmd.size() == 3)
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -i\r\n");
+    }
+    else if (cmd[2] == "+t" && cmd.size() == 3) {
         it->isTopicFree = true;
-    else if (cmd[2] == "-t" && cmd.size() == 3)
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +t\r\n");
+    }
+    else if (cmd[2] == "-t" && cmd.size() == 3) {
         it->isTopicFree = false;
-    else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false)
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -t\r\n");
+    }
+    else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         it->password = cmd.at(3);
-    else if (cmd[2] == "-k" && cmd.size() == 3)
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +k\r\n");
+    }
+    else if (cmd[2] == "-k" && cmd.size() <= 4) {
         it->password.clear();
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -k\r\n");
+    }
     else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
-            this->sendMsg("501 " + this->getNickName() + " :Unknown MODE flag\r\n");
+            it->sendMsg("501 " + this->getNickName() + " :Unknown MODE flag\r\n");
             return;
         }
         it->userLimit = stoi(cmd.at(3));
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +l\r\n");
     } 
-    else if (cmd[2] == "-l" && cmd.size() == 3)
+    else if (cmd[2] == "-l" && cmd.size() == 3) {
         it->userLimit = UINT_MAX;
+	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -l\r\n");
+    }
     else if (cmd[2] == "+o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
 	    if (it->isOperator(cmd.at(3)) == true)
 		return ;
@@ -262,18 +305,18 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
 	    for(us = it->users.begin(); us != it->users.end(); us++) {
 		    if ((*us)->getNickName() == cmd.at(3)) {
 			    it->operatorUsers.push_back((*us)->getNickName());
-			    (*us)->sendMsg("381 " + (*us)->getNickName() + " :You are now an IRC Operator\n\r");
+			    it->sendMsg("381 " + (*us)->getNickName() + " :You are now an IRC Operator\n\r");
 			    return ;
 		    }
 	    }
 	    if (us == it->users.end()) {
-        	this->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
+        	it->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
 		return ;
 	    }
     }
     else if (cmd[2] == "-o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
 	    if (cmd.at(3) == this->getNickName()) {
-		    this->sendMsg("ERROR: Cannot delete you're Operator mode on this channel\n\r");
+		    it->sendMsg("ERROR: Cannot delete you're Operator mode on this channel\n\r");
 		    return ;
 	    }
 	    std::vector<std::string>::iterator us;
@@ -284,7 +327,7 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
 		    }
 	    }
 	    if (us == it->operatorUsers.end()) {
-        	this->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
+        	it->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
 		return ;
 	    }
     }
