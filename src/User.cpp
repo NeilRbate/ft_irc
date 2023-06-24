@@ -248,12 +248,47 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
         it->password.clear();
     else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
-            this->sendMsg("501 " + this->getNickName() + ":Unknown MODE flag\r\n");
+            this->sendMsg("501 " + this->getNickName() + " :Unknown MODE flag\r\n");
             return;
         }
         it->userLimit = stoi(cmd.at(3));
-    } else if (cmd[2] == "-l" && cmd.size() == 3)
+    } 
+    else if (cmd[2] == "-l" && cmd.size() == 3)
         it->userLimit = UINT_MAX;
+    else if (cmd[2] == "+o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
+	    if (it->isOperator(cmd.at(3)) == true)
+		return ;
+	    std::vector<User *>::iterator us;
+	    for(us = it->users.begin(); us != it->users.end(); us++) {
+		    if ((*us)->getNickName() == cmd.at(3)) {
+			    it->operatorUsers.push_back((*us)->getNickName());
+			    (*us)->sendMsg("381 " + (*us)->getNickName() + " :You are now an IRC Operator\n\r");
+			    return ;
+		    }
+	    }
+	    if (us == it->users.end()) {
+        	this->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
+		return ;
+	    }
+    }
+    else if (cmd[2] == "-o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
+	    if (cmd.at(3) == this->getNickName()) {
+		    this->sendMsg("ERROR: Cannot delete you're Operator mode on this channel\n\r");
+		    return ;
+	    }
+	    std::vector<std::string>::iterator us;
+	    for(us = it->operatorUsers.begin(); us != it->operatorUsers.end(); us++) {
+		    if (*us == cmd.at(3)) {
+			    it->operatorUsers.erase(us);
+			    return ;
+		    }
+	    }
+	    if (us == it->operatorUsers.end()) {
+        	this->sendMsg("442 " + cmd.at(3) + " " + it->getName() +  " :Not on that channel\r\n");
+		return ;
+	    }
+    }
+        
     else
         this->sendMsg(":" + this->getNickName() + " 501 :Flag not found\r\n");
 }
