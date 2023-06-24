@@ -2,6 +2,8 @@
 
 #include "irc.hpp"
 
+class Channel;
+
 class User {
    public:
     User(int fd);
@@ -16,6 +18,7 @@ class User {
 
     void setIsAuth(bool isAuth);
 
+    void channelMode(Channel & chan);
     void sendMsg(std::string msg) const;
     void joinChannel(std::string name, bool checkInviteOnly);
     void leaveChannel(std::vector<std::string> const& cmd);

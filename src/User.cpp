@@ -121,9 +121,9 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
 
             // RPL_TOPIC
             if (it->topic != "")
-                it->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
+                it->sendMsg("332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
             else
-                it->sendMsg(":" + Server::name + " 331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
+                it->sendMsg("331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
 
             // RPL_NAMREPLY
             std::string userList;
@@ -206,17 +206,17 @@ void User::invite(std::vector<std::string> cmd, std::string rawcmd) {
     }
 }
 
-/*void	channelMode(User const & user, Channel const & chan) {
+void	User::channelMode(Channel & chan) {
 	 std::string mode;
-      	 chan->isInviteOnly ? mode += "+i" : mode += "-i";
-      	 chan->isTopicFree ? mode += "+t" : mode += "-t";
-	 chan->password.empty() ? mode += "-k" : mode += "+k";
-	 chan->userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
-	 chan->isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
-	 chan->sendMsg(":" + user->getNickName() + "!~" + user->getNickName() + "@localhost" + " MODE " + chan->getName() + " " + mode + "\r\n");
+      	 chan.isInviteOnly ? mode += "+i" : mode += "-i";
+      	 chan.isTopicFree ? mode += "+t" : mode += "-t";
+	 chan.password.empty() ? mode += "-k" : mode += "+k";
+	 chan.userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
+	 chan.isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
+	 chan.sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + chan.getName() + " " + mode + "\r\n");
 	 return;
 
-}*/
+}
 
 void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) {
     (void)rawcmd;
@@ -228,13 +228,7 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
 			    return;
 		    }
 		    if (it1->getName() == cmd.at(1)) {
-		    	    std::string mode;
-		    	    it1->isInviteOnly ? mode += "+i" : mode += "-i";
-		    	    it1->isTopicFree ? mode += "+t" : mode += "-t";
-			    it1->password.empty() ? mode += "-k" : mode += "+k";
-			    it1->userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
-			    it1->isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
-			    it1->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it1->getName() + " " + mode + "\r\n");
+			    channelMode(*it1);
 		    	    return;
 		    }
 	    }
@@ -264,27 +258,27 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
     }
     if (cmd[2] == "+i" && cmd.size() == 3) {
         it->isInviteOnly = true;
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +i\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "-i" && cmd.size() == 3) {
         it->isInviteOnly = false;
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -i\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "+t" && cmd.size() == 3) {
         it->isTopicFree = true;
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +t\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "-t" && cmd.size() == 3) {
         it->isTopicFree = false;
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -t\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "+k" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         it->password = cmd.at(3);
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +k\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "-k" && cmd.size() <= 4) {
         it->password.clear();
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -k\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "+l" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (cmd.at(3).find_first_not_of("0123456789") != std::string::npos) {
@@ -292,11 +286,11 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
             return;
         }
         it->userLimit = stoi(cmd.at(3));
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +l\r\n");
+	channelMode(*it);
     } 
     else if (cmd[2] == "-l" && cmd.size() == 3) {
         it->userLimit = UINT_MAX;
-	it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -l\r\n");
+	channelMode(*it);
     }
     else if (cmd[2] == "+o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
 	    if (it->isOperator(cmd.at(3)) == true)
