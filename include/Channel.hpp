@@ -21,7 +21,7 @@ class Channel {
     const std::string name;
     unsigned int userLimit;
     std::string topic;
-    std::vector<User *> users;
-    std::vector<std::string> operatorUsers;
+    std::deque<User *> users;
+    std::deque<std::string> operatorUsers;
     std::string password;
 };

@@ -21,13 +21,14 @@ class User {
     void channelMode(Channel & chan);
     void sendMsg(std::string msg) const;
     void joinChannel(std::string name, bool checkInviteOnly);
-    void leaveChannel(std::vector<std::string> const& cmd);
-    void kickChannel(std::vector<std::string> const& cmd, std::string const& rawcmd);
+    void leaveChannel(std::deque<std::string> const& cmd);
+    void kickChannel(std::deque<std::string> const& cmd, std::string const& rawcmd);
     void closeConnection();
-    void topic(std::vector<std::string> cmd, std::string rawcmd);
-    void invite(std::vector<std::string> cmd, std::string rawcmd);
+    void topic(std::deque<std::string> cmd, std::string rawcmd);
+    void invite(std::deque<std::string> cmd, std::string rawcmd);
     void quitAllChannels(void);
-    void mode(std::vector<std::string> const& cmd, std::string const& rawcmd);
+    void mode(std::deque<std::string> const& cmd, std::string const& rawcmd);
+    bool checkIsOperator(Channel &chan);
 
     std::string input;
 

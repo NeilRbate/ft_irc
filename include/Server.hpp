@@ -24,9 +24,9 @@ class Server {
     static std::string password;
     static std::string name;
 
-    static std::vector<int> fds;
-    static std::vector<Channel> channels;
-    static std::vector<User> users;
+    static std::deque<int> fds;
+    static std::deque<Channel> channels;
+    static std::deque<User> users;
 
     static sockaddr_in addr;
     static fd_set read_fd_set;

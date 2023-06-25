@@ -4,9 +4,9 @@ int Server::port;
 int Server::exited = 0;
 std::string Server::password;
 std::string Server::name = "Barba-Chat";
-std::vector<int> Server::fds;
-std::vector<Channel> Server::channels;
-std::vector<User> Server::users;
+std::deque<int> Server::fds;
+std::deque<Channel> Server::channels;
+std::deque<User> Server::users;
 sockaddr_in Server::addr;
 fd_set Server::read_fd_set;
 

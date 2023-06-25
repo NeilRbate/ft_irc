@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
+#include <deque>
 
 #define RESET "\033[0m"
 #define BLACK "\033[30m"

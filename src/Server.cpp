@@ -62,7 +62,7 @@ void Server::selectSocket(void) {
             if (!FD_ISSET(Server::fds[i], &Server::read_fd_set))
                 continue;
 
-            for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
+            for (std::deque<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
                 if (it->getFd() == Server::fds[i]) {
                     readInput(*it);
                     break;
@@ -112,7 +112,7 @@ void Server::readInput(User &user) {
 
 // ###Cmd functions###//
 
-void nick(User &user, std::vector<std::string> &cmd) {
+void nick(User &user, std::deque<std::string> &cmd) {
     if (cmd.size() < 2) {
         user.sendMsg(":" + Server::name + " 431 " + user.nickName + " :No nickname given\r\n");
         return;
@@ -121,7 +121,7 @@ void nick(User &user, std::vector<std::string> &cmd) {
         user.sendMsg(":" + Server::name + " 432 " + user.nickName + " :Invalid nickname\r\n");
         return;
     }
-    for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
+    for (std::deque<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++) {
         if (it->getNickName() == cmd.at(1) && it->getFd() != user.getFd() && user.getUserName().empty()) {
             cmd.at(1) += std::to_string(rand() % 1000);
             user.nickName = cmd.at(1);
@@ -135,7 +135,7 @@ void nick(User &user, std::vector<std::string> &cmd) {
     user.nickName = cmd.at(1);
 }
 
-void sendNoticeMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd) {
+void sendNoticeMsg(User &user, std::deque<std::string> &cmd, std::string rawcmd) {
     if (cmd.size() == 1) {
         return;
     }
@@ -152,9 +152,9 @@ void sendNoticeMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd
     cmd.at(2) = rawcmd.substr(i + 1, (rawcmd.size() - i));
 
     if (cmd[1][0] == '#') {
-        for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+        for (std::deque<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
             if (it->getName() == lower(cmd.at(1))) {
-                for (std::vector<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
+                for (std::deque<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
                     if ((*it2)->getFd() == user.fd) {
                         it->sendMsgFromUser(":" + user.nickName + " NOTICE " + cmd.at(1) + " :" + cmd.at(2) + "\r\n", user);
                         return;
@@ -164,7 +164,7 @@ void sendNoticeMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd
             }
         }
     } else {
-        for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++)
+        for (std::deque<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++)
             if (it->getNickName() == cmd.at(1)) {
                 it->sendMsg(":" + user.nickName + " NOTICE " + it->nickName + " : " + cmd.at(2) + "\r\n");
                 return;
@@ -173,7 +173,7 @@ void sendNoticeMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd
     }
 }
 
-void sendPrivMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd) {
+void sendPrivMsg(User &user, std::deque<std::string> &cmd, std::string rawcmd) {
     if (cmd.size() == 1) {
         user.sendMsg("461 " + Server::name + " " + cmd.at(0) + " :Not Enough Parameters\r\n");
         return;
@@ -192,9 +192,9 @@ void sendPrivMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd) 
     cmd.at(2) = rawcmd.substr(i + 1, (rawcmd.size() - i));
 
     if (cmd[1][0] == '#') {
-        for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+        for (std::deque<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
             if (it->getName() == lower(cmd.at(1))) {
-                for (std::vector<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
+                for (std::deque<User *>::iterator it2 = it->users.begin(); it2 != it->users.end(); it2++) {
                     if ((*it2)->getFd() == user.fd) {
                         it->sendMsgFromUser(":" + user.nickName + " PRIVMSG " + cmd.at(1) + " :" + cmd.at(2) + "\r\n", user);
                         return;
@@ -206,7 +206,7 @@ void sendPrivMsg(User &user, std::vector<std::string> &cmd, std::string rawcmd) 
         }
         user.sendMsg(":" + Server::name + " 403 " + cmd.at(1) + ": No such CHANNEL\r\n");
     } else {
-        for (std::vector<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++)
+        for (std::deque<User>::iterator it = Server::users.begin(); it != Server::users.end(); it++)
             if (it->getNickName() == cmd.at(1)) {
                 it->sendMsg(":" + user.nickName + " PRIVMSG " + it->nickName + " : " + cmd.at(2) + "\r\n");
                 return;
@@ -220,7 +220,7 @@ bool Server::executeCommand(User &user, std::string &cmd) {
     std::cout << BLUE << "[fd: " << user.getFd() << " (" << user.getNickName() << ")] " << RESET << cmd << std::endl;
     std::string stock;
     std::stringstream scmd(cmd);
-    std::vector<std::string> cmds;
+    std::deque<std::string> cmds;
     while (std::getline(scmd, stock, ' ')) {
         cmds.push_back(stock);
         stock.clear();
@@ -287,7 +287,6 @@ bool Server::executeCommand(User &user, std::string &cmd) {
             user.sendMsg(":" + lower(cmds.at(1)) + " 476 :Bad Channel Mask\r\n");
             return false;
         }
-		std::cout << "plop\n";
         std::string channelName = cmds.at(1);
         user.joinChannel(lower(channelName), true);
     } else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
@@ -309,7 +308,7 @@ int Server::getServerSocketFd(void) {
 }
 
 void Server::addChannel(std::string const &name, std::string const &operatorName) {
-    for (std::vector<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
+    for (std::deque<Channel>::iterator it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == name) {
             std::cout << RED << "ERROR: Channel already exist" << RESET << std::endl;
             return;
