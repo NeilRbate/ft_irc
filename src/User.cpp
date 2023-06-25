@@ -142,7 +142,7 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
                 userList += (*it2)->getNickName();
             }
             this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
-            this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+	    this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
 
             return;
         }
@@ -161,7 +161,7 @@ void User::topic(std::deque<std::string> cmd, std::string rawcmd) {
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == cmd.at(1) && (it->isTopicFree || it->isOperator(this->getNickName()))) {
             it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
-            it->sendMsg(":" + Server::name + " 332 " + this->getNickName() + " " + it->getName() + " :" + it->topic + "\r\n");
+            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " TOPIC " + it->getName() + " " + it->topic +"\r\n");
             return;
         }
     }
