@@ -37,9 +37,11 @@ void User::quitAllChannels(void) {
     std::vector<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         std::vector<User *>::iterator user = std::find(it->users.begin(), it->users.end(), this);
-        if (user != it->users.end() && (*user)->getFd() == this->getFd()) {
-            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " PART " + it->getName() + "\r\n");
-            it->users.erase(user);
+	 if (user != it->users.end() && (*user)->getFd() == this->getFd()) {
+		std::vector<std::string>	leave;
+		leave.push_back("PART");
+		leave.push_back(it->getName());
+		leaveChannel(leave);
         }
     }
 }
@@ -99,6 +101,7 @@ void User::leaveChannel(std::vector<std::string> const &cmd) {
             }
             it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " PART " + it->getName() + "\r\n");
             it->users.erase(user);
+	    return ;
         }
     }
 }
@@ -127,8 +130,6 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
             // RPL_TOPIC
             if (it->topic != "")
                 it->sendMsg("332 " + this->getNickName() + " " + name + " :" + it->topic + "\r\n");
-            else
-                it->sendMsg("331 " + this->getNickName() + " " + name + " :No topic is set\r\n");
 
             // RPL_NAMREPLY
             std::string userList;
