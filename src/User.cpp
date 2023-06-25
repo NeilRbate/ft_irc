@@ -109,9 +109,14 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
         if (it->getName() == name) {
             // Check invite-only
             if (it->isInviteOnly && checkInviteOnly && !it->isOperator(this->getNickName())) {
-                this->sendMsg(this->getNickName() + " " + it->getName() + " :Cannot join channel (+i)\r\n");
+                this->sendMsg("473 " + this->getNickName() + " " + it->getName() + " :Cannot join channel (+i)\r\n");
                 return;
             }
+	    // Check chan limit
+	    if (it->users.size() >= it->userLimit && !it->isOperator(this->getNickName())) {
+                this->sendMsg("471 " + this->getNickName() + " " + it->getName() + " :Cannot join Channel\r\n");
+		return ;
+	    }
 
             it->users.push_back(this);
 
@@ -212,7 +217,6 @@ void	User::channelMode(Channel & chan) {
       	 chan.isTopicFree ? mode += "+t" : mode += "-t";
 	 chan.password.empty() ? mode += "-k" : mode += "+k";
 	 chan.userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
-	 chan.isOperator(this->getNickName()) ? mode += "+o" : mode += "-o";
 	 chan.sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + chan.getName() + " " + mode + "\r\n");
 	 return;
 
@@ -228,8 +232,14 @@ void User::mode(std::vector<std::string> const &cmd, std::string const &rawcmd) 
 			    return;
 		    }
 		    if (it1->getName() == cmd.at(1)) {
-			    channelMode(*it1);
-		    	    return;
+			 std::string mode;
+		      	 it1->isInviteOnly ? mode += "+i" : mode += "-i";
+		      	 it1->isTopicFree ? mode += "+t" : mode += "-t";
+			 it1->password.empty() ? mode += "-k" : mode += "+k";
+			 it1->userLimit == UINT_MAX ? mode += "-l" : mode += "+l";
+			 this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it1->getName() + " " + mode + "\r\n");
+	 		return;
+
 		    }
 	    }
     }
