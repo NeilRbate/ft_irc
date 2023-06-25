@@ -167,7 +167,7 @@ void User::topic(std::deque<std::string> cmd, std::string rawcmd) {
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == cmd.at(1) && (it->isTopicFree || it->isOperator(this->getNickName()))) {
             it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
-            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " TOPIC " + it->getName() + " " + it->topic + "\r\n");
+            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " TOPIC " + it->getName() + " :" + it->topic + "\r\n");
             return;
         }
     }
