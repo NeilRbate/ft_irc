@@ -283,12 +283,13 @@ bool Server::executeCommand(User &user, std::string &cmd) {
             user.sendMsg(":" + user.getNickName() + " 461 :Not Enough Parameters\r\n");
             return false;
         }
-        if (cmds.size() > 2 || cmds[1][0] != '#') {
+        if (cmds.size() > 3 || cmds[1][0] != '#') {
             user.sendMsg(":" + lower(cmds.at(1)) + " 476 :Bad Channel Mask\r\n");
             return false;
         }
+        std::string password = cmds.size() == 3 ? cmds.at(2) : "";
         std::string channelName = cmds.at(1);
-        user.joinChannel(lower(channelName), true);
+        user.joinChannel(lower(channelName), true, password);
     } else if (cmds.at(0) == "PART" && user.getIsAuth() == true)
         user.leaveChannel(cmds);
     else if (cmds.at(0) == "KICK" && user.getIsAuth() == true)

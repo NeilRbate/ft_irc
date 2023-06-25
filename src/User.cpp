@@ -105,7 +105,7 @@ void User::leaveChannel(std::deque<std::string> const &cmd) {
     }
 }
 
-void User::joinChannel(std::string name, bool checkInviteOnly) {
+void User::joinChannel(std::string name, bool checkInviteOnly, std::string password) {
     std::deque<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == name) {
@@ -117,6 +117,12 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
             // Check chan limit
             if (it->users.size() >= it->userLimit && !it->isOperator(this->getNickName())) {
                 this->sendMsg("471 " + this->getNickName() + " " + it->getName() + " :Cannot join Channel\r\n");
+                return;
+            }
+
+            // Check password
+            if (it->password != password && !it->isOperator(this->getNickName()) && password != it->password) {
+                this->sendMsg("475 " + this->getNickName() + " " + it->getName() + " :Cannot join channel (+k)\r\n");
                 return;
             }
 
@@ -142,14 +148,14 @@ void User::joinChannel(std::string name, bool checkInviteOnly) {
                 userList += (*it2)->getNickName();
             }
             this->sendMsg(":" + Server::name + " 353 " + this->getNickName() + " = " + name + " :" + userList + "\r\n");
-	    this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
+            this->sendMsg(":" + Server::name + " 366 " + this->getNickName() + " " + name + " :End of /NAMES list.\r\n");
 
             return;
         }
     }
     Server::addChannel(name, this->getNickName());
 
-    this->joinChannel(name, checkInviteOnly);
+    this->joinChannel(name, checkInviteOnly, password);
 }
 
 void User::topic(std::deque<std::string> cmd, std::string rawcmd) {
@@ -161,7 +167,7 @@ void User::topic(std::deque<std::string> cmd, std::string rawcmd) {
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
         if (it->getName() == cmd.at(1) && (it->isTopicFree || it->isOperator(this->getNickName()))) {
             it->changeTopic(rawcmd.substr(rawcmd.find(":") + 1));
-            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " TOPIC " + it->getName() + " " + it->topic +"\r\n");
+            it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " TOPIC " + it->getName() + " " + it->topic + "\r\n");
             return;
         }
     }
@@ -175,40 +181,48 @@ void User::invite(std::deque<std::string> cmd, std::string rawcmd) {
     }
     std::deque<Channel>::iterator it;
     for (it = Server::channels.begin(); it != Server::channels.end(); it++) {
-        if (it->getName() != lower(cmd.at(2)))
-            continue;
+        if (it->getName() == lower(cmd.at(2))) break;
+    }
 
-        if (!it->isOperator(this->getNickName())) {
-            this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
-        }
-
-        std::deque<User>::iterator target;
-        for (target = Server::users.begin(); target != Server::users.end(); target++) {
-            if (target->getNickName() == cmd.at(1)) {
-                break;
-            }
-        }
-
-        if (target == Server::users.end()) {
-            // TODO Change msg
-            this->sendMsg("443 " + cmd.at(1) + " :user not found on server\r\n");
-            return;
-        }
-
-        std::deque<User *>::iterator user;
-        for (user = it->users.begin(); user != it->users.end(); user++) {
-            if ((*user)->getNickName() == cmd.at(1))
-                break;
-        }
-        if (user != it->users.end()) {
-            this->sendMsg("443 " + cmd.at(1) + " :is already on channel\r\n");
-            return;
-        }
-
-        target->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " INVITE " + cmd.at(1) + " " + it->getName() + "\r\n");
-        target->joinChannel(it->getName(), false);
+    if (it == Server::channels.end()) {
+        this->sendMsg("403 " + this->nickName + " " + lower(cmd.at(2)) + " :No such channel\r\n");
         return;
     }
+
+    if (!it->isOperator(this->getNickName())) {
+        this->sendMsg("482 " + this->getNickName() + " " + it->getName() + " :You're not channel operator\r\n");
+        return;
+    }
+
+    std::deque<User *>::iterator user;
+    for (user = it->users.begin(); user != it->users.end(); user++) {
+        if ((*user)->getNickName() == this->getNickName()) break;
+    }
+    if (user == it->users.end()) {
+        this->sendMsg("442 " + this->getNickName() + " " + it->getName() + " :You're not on that channel\r\n");
+        return;
+    }
+
+    std::deque<User>::iterator target;
+    for (target = Server::users.begin(); target != Server::users.end(); target++) {
+        if (target->getNickName() == cmd.at(1)) break;
+    }
+
+    if (target == Server::users.end()) {
+        this->sendMsg("401 " + cmd.at(1) + " :No such nick\r\n");
+        return;
+    }
+
+    for (user = it->users.begin(); user != it->users.end(); user++) {
+        if ((*user)->getNickName() == cmd.at(1)) break;
+    }
+    if (user != it->users.end()) {
+        this->sendMsg("443 " + cmd.at(1) + " :is already on channel\r\n");
+        return;
+    }
+
+    target->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " INVITE " + cmd.at(1) + " " + it->getName() + "\r\n");
+    target->joinChannel(it->getName(), false, "");
 }
 
 void User::channelMode(Channel &chan) {
@@ -306,39 +320,37 @@ void User::mode(std::deque<std::string> const &cmd, std::string const &rawcmd) {
         channelMode(*it);
     } else if (cmd[2] == "+o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (!this->checkIsOperator(*it)) return;
-        if (it->isOperator(cmd.at(3)) == true)
-            return;
         std::deque<User *>::iterator us;
         for (us = it->users.begin(); us != it->users.end(); us++) {
             if ((*us)->getNickName() == cmd.at(3)) {
-                it->operatorUsers.push_back((*us)->getNickName());
-                it->sendMsg("381 " + (*us)->getNickName() + " :You are now an IRC Operator\n\r");
+                if (!it->isOperator((*us)->getNickName())) {
+                    it->operatorUsers.push_back((*us)->getNickName());
+                }
+                it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " +o " + (*us)->getNickName() + "\r\n");
                 return;
             }
         }
-        if (us == it->users.end()) {
-            it->sendMsg("442 " + cmd.at(3) + " " + it->getName() + " :Not on that channel\r\n");
-            return;
-        }
+        this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " 441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
     } else if (cmd[2] == "-o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (!this->checkIsOperator(*it)) return;
         if (cmd.at(3) == this->getNickName()) {
-            it->sendMsg("ERROR: Cannot delete you're Operator mode on this channel\n\r");
+            it->sendMsg("ERROR: You can't remove yourself from operator list\r\n");
             return;
         }
-        std::deque<std::string>::iterator us;
-        for (us = it->operatorUsers.begin(); us != it->operatorUsers.end(); us++) {
-            if (*us == cmd.at(3)) {
-                it->operatorUsers.erase(us);
+        std::deque<User *>::iterator us;
+        for (us = it->users.begin(); us != it->users.end(); us++) {
+            if ((*us)->getNickName() == cmd.at(3)) {
+                std::string target = (*us)->getNickName();
+                if (it->isOperator(target)) {
+                    it->operatorUsers.erase(std::remove(it->operatorUsers.begin(), it->operatorUsers.end(), target), it->operatorUsers.end());
+                }
+                it->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " MODE " + it->getName() + " -o " + cmd.at(3) + "\r\n");
                 return;
             }
         }
-        if (us == it->operatorUsers.end()) {
-            it->sendMsg("442 " + cmd.at(3) + " " + it->getName() + " :Not on that channel\r\n");
-            return;
-        }
+        this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " 441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
     }
 
     else
-        this->sendMsg(":" + this->getNickName() + " 501 :Flag not found\r\n");
+        this->sendMsg("472 " + this->nickName + " " + cmd.at(2) + " :is unknown mode char to me\r\n");
 }

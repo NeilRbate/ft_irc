@@ -20,7 +20,7 @@ class User {
 
     void channelMode(Channel & chan);
     void sendMsg(std::string msg) const;
-    void joinChannel(std::string name, bool checkInviteOnly);
+    void joinChannel(std::string name, bool checkInviteOnly, std::string password);
     void leaveChannel(std::deque<std::string> const& cmd);
     void kickChannel(std::deque<std::string> const& cmd, std::string const& rawcmd);
     void closeConnection();
