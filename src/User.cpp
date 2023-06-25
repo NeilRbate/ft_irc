@@ -330,7 +330,7 @@ void User::mode(std::deque<std::string> const &cmd, std::string const &rawcmd) {
                 return;
             }
         }
-        this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " 441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
+        this->sendMsg("441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
     } else if (cmd[2] == "-o" && cmd.size() == 4 && cmd.at(3).empty() == false) {
         if (!this->checkIsOperator(*it)) return;
         if (cmd.at(3) == this->getNickName()) {
@@ -348,7 +348,7 @@ void User::mode(std::deque<std::string> const &cmd, std::string const &rawcmd) {
                 return;
             }
         }
-        this->sendMsg(":" + this->getNickName() + "!~" + this->getNickName() + "@localhost" + " 441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
+        this->sendMsg("441 " + this->getNickName() + " " + cmd.at(3) + " " + it->getName() + " :They aren't on that channel\r\n");
     }
 
     else
